@@ -1,90 +1,47 @@
 import streamlit as st
+from pathlib import Path
 
 st.set_page_config(page_title="Material Library", layout="wide")
 
-st.title("📚 Residential Construction Material Library")
+st.title("🧱 Construction Material Library")
+st.markdown("Explore commonly used construction materials with detailed engineering information.")
 
-materials = {
+BASE_PATH = Path("assets/materials/images")
 
-"Cement":{
-"Purpose":"Binding Material",
-"Grades":"33,43,53",
-"Life":"50+ Years",
-"Uses":"Foundation, Beam, Slab, Column",
-"Cost":"₹380-450 / Bag"
-},
+materials = [
+    "cement",
+    "sand",
+    "steel",
+    "brick",
+    "concrete",
+    "paint",
+    "tiles"
+]
 
-"Sand":{
-"Purpose":"Fine Aggregate",
-"Grades":"Zone I-IV",
-"Life":"Permanent",
-"Uses":"Concrete & Plaster",
-"Cost":"₹60-90 / Cubic ft"
-},
+cols = st.columns(3)
 
-"Aggregate":{
-"Purpose":"Coarse Aggregate",
-"Grades":"20mm,10mm",
-"Life":"Permanent",
-"Uses":"Concrete",
-"Cost":"₹70-100 / Cubic ft"
-},
+for i, material in enumerate(materials):
 
-"Steel":{
-"Purpose":"Reinforcement",
-"Grades":"Fe415,Fe500,Fe550",
-"Life":"75 Years",
-"Uses":"Beam,Column,Slab",
-"Cost":"₹60-70 / Kg"
-},
+    folder = BASE_PATH / material
+    image = folder / f"{material}.jpg"
+    info = folder / "info.txt"
 
-"Bricks":{
-"Purpose":"Wall Construction",
-"Grades":"Class A",
-"Life":"100 Years",
-"Uses":"Walls",
-"Cost":"₹8-15 / Brick"
-},
+    with cols[i % 3]:
 
-"Concrete":{
-"Purpose":"Structural Member",
-"Grades":"M20,M25,M30",
-"Life":"75 Years",
-"Uses":"Beam,Column,Slab",
-"Cost":"₹6500-8500 / m³"
-},
+        st.subheader(material.capitalize())
 
-"Tiles":{
-"Purpose":"Floor Finish",
-"Grades":"Vitrified,Ceramic",
-"Life":"25 Years",
-"Uses":"Flooring",
-"Cost":"₹45-180 / sq.ft"
-},
+        if image.exists():
+            st.image(str(image), use_container_width=True)
+        else:
+            st.warning("Image not found")
 
-"Paint":{
-"Purpose":"Surface Finish",
-"Grades":"Interior,Exterior",
-"Life":"7 Years",
-"Uses":"Walls",
-"Cost":"₹180-450 / Litre"
-}
+        if info.exists():
+            with open(info, "r", encoding="utf-8") as f:
+                text = f.read()
 
-}
+            with st.expander("📖 View Details"):
+                st.text(text)
 
-material = st.selectbox("Select Material", list(materials.keys()))
-
-st.subheader(material)
-
-col1,col2=st.columns(2)
-
-with col1:
-    st.metric("Purpose",materials[material]["Purpose"])
-    st.metric("Grades",materials[material]["Grades"])
-    st.metric("Life",materials[material]["Life"])
-
-with col2:
-    st.metric("Uses",materials[material]["Uses"])
-    st.metric("Approx Cost",materials[material]["Cost"])
-
-st.success("✔ AI Material Database Ready")
+        else:
+            st.error("info.txt not found")
+            

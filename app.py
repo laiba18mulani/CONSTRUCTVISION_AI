@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from modules.digital_twin.engine import TwinInputs, frame_members, frame_nodes, screening_results, telemetry
+from modules.portfolio import render as portfolio
 
 st.set_page_config(page_title="ConstructVision | Digital Twin", page_icon=":material/domain:", layout="wide")
 
@@ -12,7 +13,7 @@ st.session_state.setdefault("twin", TwinInputs())
 with st.sidebar:
     st.title("ConstructVision")
     st.caption("Built environment intelligence")
-    view = st.radio("Workspace", ["Command center", "Twin studio", "Capture & reconstruction", "Asset health", "Integration"], label_visibility="collapsed")
+    view = st.radio("Workspace", ["Portfolio", "Command center", "Twin studio", "Capture & reconstruction", "Asset health", "Integration"], label_visibility="collapsed")
     st.space("medium")
     st.badge("LIVE TELEMETRY", icon=":material/sensors:", color="green")
     st.caption("Asset: CV-HQ-01 · Bengaluru")
@@ -144,4 +145,4 @@ def integration():
     st.info("The visual wind vectors in Twin studio communicate load direction. Animated, physically correct air flow requires a CFD mesh, boundary conditions and a validated OpenFOAM/CFD job—not browser animation alone.", icon=":material/air:")
 
 
-{"Command center": hero, "Twin studio": studio, "Capture & reconstruction": capture, "Asset health": health, "Integration": integration}[view]()
+{"Portfolio": portfolio, "Command center": hero, "Twin studio": studio, "Capture & reconstruction": capture, "Asset health": health, "Integration": integration}[view]()

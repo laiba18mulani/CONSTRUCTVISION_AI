@@ -1,919 +1,505 @@
 import streamlit as st
-from streamlit.components.v1 import html
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
 
 # ==========================================================
-# PAGE CONFIG
+# PAGE CONFIGURATION
 # ==========================================================
-
 st.set_page_config(
-    page_title="Tutorial | CONSTRUCTVISION AI",
+    page_title="Tutorial & Guide | CONSTRUCTVISION AI",
     page_icon="📘",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # ==========================================================
-# PROFESSIONAL CIVIL CSS
+# CUSTOM DARK BLUEPRINT STYLING
 # ==========================================================
-
 st.markdown("""
 <style>
-
-/* ---------- Background ---------- */
-
-.stApp{
-    background:linear-gradient(135deg,#ECECEC,#D9D9D9,#F3F3F3);
-}
-
-/* ---------- Hide Streamlit ---------- */
-
-#MainMenu{visibility:hidden;}
-footer{visibility:hidden;}
-header{visibility:hidden;}
-
-/* ---------- Sidebar ---------- */
-
-section[data-testid="stSidebar"]{
-    background:#0F1E2E;
-}
-
-section[data-testid="stSidebar"] *{
-    color:white;
-}
-
-/* ---------- Main Heading ---------- */
-
-.main-title{
-
-    font-size:50px;
-
-    font-weight:800;
-
-    color:#243447;
-
-    text-align:center;
-
-    margin-bottom:5px;
-
-}
-
-.sub-title{
-
-    font-size:22px;
-
-    color:#5A6773;
-
-    text-align:center;
-
-    margin-bottom:40px;
-
-}
-
-/* ---------- White Cards ---------- */
-
-.card{
-
-    background:#ffffff;
-
-    color:#404040;
-
-    border:1px solid #d8d8d8;
-
-    padding:30px;
-
-    border-radius:22px;
-
-    border-left:8px solid #3E556B;
-
-    box-shadow:0px 8px 25px rgba(0,0,0,.12);
-
-    transition:.35s;
-
-    margin-bottom:20px;
-
-}
-
-.card:hover{
-
-    transform:translateY(-6px);
-
-}
-
-/* ---------- Section ---------- */
-
-.section{
-
-    background:#ffffff;
-
-    color:#404040;
-
-    border:1px solid #d8d8d8;
-
-    padding:30px;
-
-    border-radius:20px;
-
-    box-shadow:0px 5px 20px rgba(0,0,0,.08);
-
-    margin-top:20px;
-
-    margin-bottom:20px;
-
-}
-
-/* ---------- FORCE ALL TITLES ---------- */
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6{
-
-    color:#243447 !important;
-
-    opacity:1 !important;
-
-    visibility:visible !important;
-
-    display:block !important;
-
-    font-weight:700 !important;
-
-}
-
-.card h1,
-.card h2,
-.card h3,
-.card h4,
-.card h5,
-.card h6{
-
-    color:#243447 !important;
-
-}
-
-.feature h1,
-.feature h2,
-.feature h3{
-
-    color:#243447 !important;
-
-}
-
-.section h1,
-.section h2,
-.section h3{
-
-    color:#243447 !important;
-
-}
-
-.main-title{
-
-    color:#243447 !important;
-
-}
-
-.sub-title{
-
-    color:#5A6773 !important;
-
-}
-
-p{
-
-    color:#525252;
-
-    font-size:18px;
-
-    line-height:1.9;
-
-}
-
-/* ---------- Feature Box ---------- */
-
-.feature{
-
-    background:#ffffff;
-
-    color:#404040;
-
-    border:1px solid #d8d8d8;
-
-    padding:25px;
-
-    border-radius:18px;
-
-    border-top:6px solid #3E556B;
-
-    box-shadow:0px 6px 18px rgba(0,0,0,.10);
-
-    text-align:center;
-
-    height:260px;
-
-}
-
-.feature h3{
-
-    color:#243447;
-
-}
-
-.feature p{
-
-    font-size:16px;
-
-}
-
-/* ---------- Footer ---------- */
-
-.footer{
-
-    background:#3E556B;
-
-    border-radius:20px;
-
-    padding:35px;
-
-    color:white;
-
-    text-align:center;
-
-}
-
-.footer h2{
-
-    color:white;
-
-}
-
-.footer p{
-
-    color:white;
-
-}
-
-/* ---------- Floating Civil Icons ---------- */
-
-.floating{
-
-position:fixed;
-
-font-size:32px;
-
-opacity:.10;
-
-animation:float 12s linear infinite;
-
-pointer-events:none;
-
-z-index:0;
-
-}
-
-.f1{left:5%;top:15%;animation-delay:0s;}
-.f2{left:92%;top:22%;animation-delay:2s;}
-.f3{left:12%;top:75%;animation-delay:5s;}
-.f4{left:86%;top:82%;animation-delay:8s;}
-.f5{left:50%;top:10%;animation-delay:3s;}
-
-@keyframes float{
-
-0%{transform:translateY(0px);}
-50%{transform:translateY(-25px);}
-100%{transform:translateY(0px);}
-
-}
-
+    /* Global App Styling */
+    .stApp {
+        background-color: #0B0F17;
+        color: #E2E8F0;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    /* Dark Blueprint Background Grid Overlay */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image:
+            linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+        background-size: 35px 35px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Hide Default Headers/Footers */
+    #MainMenu, footer, header {
+        visibility: hidden;
+    }
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #111827 !important;
+        border-right: 1px solid #1E293B;
+    }
+
+    /* Dark Cards & Hover Effects */
+    .dark-card {
+        background: #1E293B;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        transition: all 0.3s ease-in-out;
+    }
+    .dark-card:hover {
+        border-color: #38BDF8;
+        box-shadow: 0 6px 25px rgba(56, 189, 248, 0.2);
+        transform: translateY(-3px);
+    }
+
+    /* Hero Banner */
+    .hero-dark {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        border: 1px solid #334155;
+        border-left: 6px solid #38BDF8;
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Accent Typography */
+    h1, h2, h3, h4 {
+        color: #F8FAFC !important;
+        font-weight: 700;
+    }
+    .accent-cyan { color: #38BDF8 !important; }
+    .accent-orange { color: #F97316 !important; }
+    .accent-green { color: #10B981 !important; }
+
+    /* Custom Buttons */
+    .stButton>button {
+        background: linear-gradient(90deg, #0284C7 0%, #0369A1 100%);
+        color: white !important;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background: linear-gradient(90deg, #EA580C 0%, #C2410C 100%);
+        box-shadow: 0 0 15px rgba(234, 88, 12, 0.4);
+    }
+
+    /* Streamlit Expander Dark Override */
+    .streamlit-expanderHeader {
+        background-color: #1E293B !important;
+        color: #F8FAFC !important;
+        border-radius: 8px !important;
+    }
 </style>
-""",unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ==========================================================
-# FLOATING CIVIL ANIMATION
+# SIDEBAR NAVIGATION & QUICK JUMP
 # ==========================================================
+with st.sidebar:
+    st.markdown("### 📘 **CONSTRUCTVISION AI**")
+    st.caption("Interactive Tutorial & User Guide")
+    st.divider()
 
-html("""
+    guide_section = st.radio(
+        "Tutorial Navigation",
+        [
+            "🏠 Platform Overview",
+            "⚙️ Interactive Workflow Stepper",
+            "🧱 Dashboard Module Guide",
+            "⚡ AI vs. Manual ROI Calculator",
+            "📋 Best Practices & Guidelines",
+            "💡 Practice Knowledge Check",
+            "❓ Interactive FAQ",
+            "👷 Team & Credits"
+        ]
+    )
 
-<div class="floating f1">🧱</div>
-
-<div class="floating f2">🏗️</div>
-
-<div class="floating f3">🪨</div>
-
-<div class="floating f4">🏢</div>
-
-<div class="floating f5">📐</div>
-
-""",height=0)
+    st.divider()
+    st.info("💡 **Tip:** Go through the workflow stepper before starting your first AI visual site audit.")
+    st.caption("Version 2.4 Dark Blueprint | © 2026")
 
 # ==========================================================
-# HEADER
+# SECTION 1: PLATFORM OVERVIEW
 # ==========================================================
-
-st.markdown("""
-
-<div class="main-title">
-
-🏗️ CONSTRUCTVISION AI
-
-</div>
-
-<div class="sub-title">
-
-Tutorial & User Guide
-
-</div>
-
-""",unsafe_allow_html=True)
-
-st.markdown("""
-
-<div class="section">
-
-<h2>📘 Platform Overview</h2>
-
-<p>
-
-<b>CONSTRUCTVISION AI</b> is an Artificial Intelligence powered
-Civil Engineering platform developed for residential building
-inspection.
-
-The system combines Computer Vision, Artificial Intelligence,
-Image Processing and Civil Engineering knowledge to assist
-engineers during structural inspection.
-
-This tutorial explains how to use every module of the dashboard
-and understand the complete inspection workflow before starting
-your project.
-
-</p>
-
-</div>
-
-""",unsafe_allow_html=True)
-# ==========================================================
-# HOW CONSTRUCTVISION AI WORKS
-# ==========================================================
-
-st.markdown("## 🏗 Inspection Workflow")
-
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
+if guide_section == "🏠 Platform Overview":
     st.markdown("""
-    <div class="feature">
-    <h2>📷</h2>
-    <h3>Capture Image</h3>
-    <p>
-    Upload a clear image of the residential building component
-    for inspection.
-    </p>
+    <div class="hero-dark">
+        <h1>📘 Tutorial & <span class="accent-cyan">User Guide</span></h1>
+        <p style="font-size: 1.15rem; color: #94A3B8;">
+            Master the <b>CONSTRUCTVISION AI</b> residential inspection workspace.
+        </p>
+        <hr style="border-color: #334155;">
+        <p style="color: #CBD5E1; line-height: 1.8;">
+            <b>CONSTRUCTVISION AI</b> is an engineering decision-support platform designed to automate residential structural defect recognition, perform damage severity assessments, estimate repair costs, and compile compliant audit reports using Artificial Intelligence and Computer Vision.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-with c2:
-    st.markdown("""
-    <div class="feature">
-    <h2>🧠</h2>
-    <h3>AI Analysis</h3>
-    <p>
-    Computer Vision analyses the uploaded image and detects
-    visible construction defects.
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### 🎯 Core Engineering Objectives")
+    col1, col2, col3 = st.columns(3)
 
-with c3:
-    st.markdown("""
-    <div class="feature">
-    <h2>🏗️</h2>
-    <h3>Engineering Review</h3>
-    <p>
-    The detected component is compared with civil engineering
-    standards and construction knowledge.
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
+    with col1:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-cyan">📷 Automated Vision</h3>
+            <p style="color:#94A3B8; font-size:14px;">Replaces subjective manual sight checks with high-precision YOLO object detection for micro-cracks, spalling, and voids.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-with c4:
-    st.markdown("""
-    <div class="feature">
-    <h2>📄</h2>
-    <h3>Generate Report</h3>
-    <p>
-    A professional inspection summary is generated for further
-    engineering decisions.
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-orange">📊 Quantitative Risk</h3>
+            <p style="color:#94A3B8; font-size:14px;">Evaluates structural integrity based on civil engineering codes (IS 456 / ACI 318) to classify defect severity grades.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-st.write("")
-st.divider()
+    with col3:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-green">📄 Instant Audits</h3>
+            <p style="color:#94A3B8; font-size:14px;">Generates structured, professional site inspection reports ready for project managers and structural consultants.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================================
-# DASHBOARD MODULES
+# SECTION 2: INTERACTIVE WORKFLOW STEPPER
 # ==========================================================
+elif guide_section == "⚙️ Interactive Workflow Stepper":
+    st.markdown("## ⚙️ Interactive Inspection Workflow Pipeline")
+    st.caption("Step through the 4-phase automated inspection pipeline to see how data flows from site capture to final report.")
 
-st.markdown("## 🧱 Dashboard Modules")
+    step = st.select_slider(
+        "Move slider to test each phase of the workflow:",
+        options=["Phase 1: Image Capture", "Phase 2: AI Computer Vision", "Phase 3: Structural Assessment", "Phase 4: Audit Report Generation"]
+    )
 
-left, right = st.columns(2)
+    st.write("")
 
-with left:
+    if "Phase 1" in step:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-cyan">Phase 1: High-Resolution Image Capture 📷</h3>
+            <p><b>Objective:</b> Collect visual evidence from columns, beams, slabs, or masonry brickwork.</p>
+            <ul>
+                <li>Ensure adequate natural lighting or artificial floodlights.</li>
+                <li>Hold camera perpendicular to the target surface to minimize perspective distortion.</li>
+                <li>Supported formats: JPG, PNG, WEBP (Minimum recommended resolution: 1080p).</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("""
+    elif "Phase 2" in step:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-orange">Phase 2: Deep Learning Inference 🧠</h3>
+            <p><b>Objective:</b> Computer Vision model parses pixel matrices to localize structural anomalies.</p>
+            <ul>
+                <li>Detects <b>Shear Cracks</b>, <b>Concrete Spalling</b>, and <b>Aggregate Honeycombing</b>.</li>
+                <li>Draws real-time bounding boxes with confidence probability scores (e.g., 94.8%).</li>
+                <li>Filters out non-structural surface dirt or paint scuffs based on model sensitivity sliders.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-<div class="card">
+    elif "Phase 3" in step:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-green">Phase 3: Civil Engineering Assessment 🏗️</h3>
+            <p><b>Objective:</b> Evaluate structural threat level and determine remediation requirements.</p>
+            <ul>
+                <li><b>Low Severity:</b> Hairline hairline crazing (< 0.2 mm width) - Seal & monitor.</li>
+                <li><b>Medium Severity:</b> Flexural cracking (0.2 mm - 1.5 mm) - Polymer resin injection.</li>
+                <li><b>High Severity:</b> Spalling with exposed reinforcement steel - Jacketing & structural repair.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-<h3>🏠 Home</h3>
-
-Overview of the complete CONSTRUCTVISION AI platform,
-project objectives and quick navigation.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>📘 Tutorial</h3>
-
-Learn the inspection workflow, dashboard modules and
-recommended usage before starting analysis.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>🏢 3D Building</h3>
-
-Explore residential structural components using an
-interactive building model.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>🧱 Materials</h3>
-
-Study commonly used residential construction materials,
-their applications and engineering properties.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-with right:
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>📷 AI Inspection</h3>
-
-Upload building images for AI-powered structural
-inspection and defect detection.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>📊 Damage Analysis</h3>
-
-Analyse detected defects and understand their possible
-impact on structural performance.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>💰 Cost Estimation</h3>
-
-Estimate approximate repair cost based on detected
-damage severity.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>📄 Reports</h3>
-
-Generate organized inspection reports for engineering
-documentation and project records.
-
-</div>
-
-""", unsafe_allow_html=True)
-
-st.write("")
-st.divider()
+    elif "Phase 4" in step:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-cyan">Phase 4: Automated Report Generation 📄</h3>
+            <p><b>Objective:</b> Compile findings into an exportable, official engineering document.</p>
+            <ul>
+                <li>Aggregates date, location, lead engineer details, and defect annotations.</li>
+                <li>Exports formatted plain text or PDF summary logs for project archiving.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================================
-# EXPECTED OUTPUT
+# SECTION 3: DASHBOARD MODULE GUIDE
 # ==========================================================
-
-st.markdown("## 📈 Expected Output")
-
-a, b, c = st.columns(3)
-
-with a:
-
-    st.markdown("""
-
-<div class="feature">
-
-<h2>🔍</h2>
-
-<h3>AI Detection</h3>
-
-<p>
-
-• Structural Component
-
-<br>
-
-• Visible Defects
-
-<br>
-
-• Inspection Confidence
-
-</p>
-
-</div>
-
-""", unsafe_allow_html=True)
-
-with b:
-
-    st.markdown("""
-
-<div class="feature">
-
-<h2>📋</h2>
-
-<h3>Engineering Summary</h3>
-
-<p>
-
-• Damage Description
-
-<br>
-
-• Material Information
-
-<br>
-
-• Structural Remarks
-
-</p>
-
-</div>
-
-""", unsafe_allow_html=True)
-
-with c:
-
-    st.markdown("""
-
-<div class="feature">
-
-<h2>📄</h2>
-
-<h3>Professional Report</h3>
-
-<p>
-
-• Inspection Report
-
-<br>
-
-• Analysis Results
-
-<br>
-
-• Documentation
-
-</p>
-
-</div>
-
-""", unsafe_allow_html=True)
-
-st.write("")
-st.divider()
-# ==========================================================
-# ENGINEERING BEST PRACTICES
-# ==========================================================
-
-st.markdown("## 📋 Best Practices Before Inspection")
-
-left,right = st.columns(2)
-
-with left:
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>📷 Image Quality</h3>
-
-<ul>
-
-<li>Capture images in good daylight.</li>
-
-<li>Keep the camera stable.</li>
-
-<li>Avoid blurry photographs.</li>
-
-<li>Focus on the structural component.</li>
-
-<li>Capture the complete damaged region.</li>
-
-</ul>
-
-</div>
-
-""",unsafe_allow_html=True)
-
-with right:
-
-    st.markdown("""
-
-<div class="card">
-
-<h3>🏗 Engineering Recommendations</h3>
-
-<ul>
-
-<li>Verify AI results with site observations.</li>
-
-<li>Inspect multiple images when required.</li>
-
-<li>Review material properties carefully.</li>
-
-<li>Generate reports after inspection.</li>
-
-<li>Maintain inspection records for future reference.</li>
-
-</ul>
-
-</div>
-
-""",unsafe_allow_html=True)
-
-st.write("")
-st.divider()
+elif guide_section == "🧱 Dashboard Module Guide":
+    st.markdown("## 🧱 Platform Module Explorer")
+    st.caption("Explore what each module inside CONSTRUCTVISION AI does.")
+
+    tab1, tab2, tab3, tab4 = st.columns(4)
+
+    m1, m2 = st.columns(2)
+
+    with m1:
+        st.markdown("""
+        <div class="dark-card">
+            <h4 class="accent-cyan">🏠 Home Overview</h4>
+            <p style="font-size:14px; color:#94A3B8;">Executive dashboard showing global system metrics, model status, and platform architecture overview.</p>
+        </div>
+        <div class="dark-card">
+            <h4 class="accent-cyan">📷 AI Inspection Engine</h4>
+            <p style="font-size:14px; color:#94A3B8;">Upload site photos to run real-time defect identification, confidence scoring, and bounding box visualization.</p>
+        </div>
+        <div class="dark-card">
+            <h4 class="accent-cyan">🧱 Material Knowledge Base</h4>
+            <p style="font-size:14px; color:#94A3B8;">Filterable database for Concrete (M15-M40), Steel Rebar grades, and IS 10262 mix calculation tools.</p>
+        </div>
+        <div class="dark-card">
+            <h4 class="accent-cyan">📊 Damage & Risk Analytics</h4>
+            <p style="font-size:14px; color:#94A3B8;">Interactive Plotly risk heatmaps and component defect breakdown charts for data-driven decisions.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with m2:
+        st.markdown("""
+        <div class="dark-card">
+            <h4 class="accent-orange">🏢 3D Structural Explorer</h4>
+            <p style="font-size:14px; color:#94A3B8;">Interactive structural component viewer for load paths, footings, columns, and slabs.</p>
+        </div>
+        <div class="dark-card">
+            <h4 class="accent-orange">💰 Cost & Remediation Estimator</h4>
+            <p style="font-size:14px; color:#94A3B8;">Provides instant cost projections for epoxy grouting, concrete jacketing, or plaster repairs.</p>
+        </div>
+        <div class="dark-card">
+            <h4 class="accent-orange">📄 Audit Report Generator</h4>
+            <p style="font-size:14px; color:#94A3B8;">Customizable form builder to aggregate site findings into downloadable engineering documentation.</p>
+        </div>
+        <div class="dark-card">
+            <h4 class="accent-orange">📘 Interactive Tutorial</h4>
+            <p style="font-size:14px; color:#94A3B8;">Complete platform guide, efficiency calculators, and knowledge checks (Current Module).</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================================
-# QUICK FAQ
+# SECTION 4: AI VS MANUAL ROI CALCULATOR
 # ==========================================================
-
-st.markdown("## ❓ Frequently Asked Questions")
-
-with st.expander("📷 Which images should I upload?"):
-
-    st.write("""
-
-Upload clear photographs of residential building
-components such as walls, beams, columns, slabs,
-footings or structural joints.
-
-""")
-
-with st.expander("🤖 Does AI replace Civil Engineers?"):
-
-    st.write("""
-
-No.
-
-CONSTRUCTVISION AI is an engineering support tool.
-Final decisions should always be taken by qualified
-Civil Engineers.
-
-""")
-
-with st.expander("📄 What will I receive after inspection?"):
-
-    st.write("""
-
-• AI Detection Result
-
-• Damage Analysis
-
-• Engineering Summary
-
-• Construction Material Information
-
-• Inspection Report
-
-""")
-
-st.write("")
-st.divider()
-
-# ==========================================================
-# DEVELOPERS
-# ==========================================================
-
-st.markdown("## 👷 Development Team")
-
-d1,d2 = st.columns(2)
-
-with d1:
-
-    st.markdown("""
-
-<div class="card">
-
-<h2>👷 Ritika Bhumkar</h2>
-
-<hr>
-
-<b>Role</b>
-
-<br>
-
-Civil Engineering Intern
-
-<br><br>
-
-<b>Project Contributions</b>
-
-<ul>
-
-<li>Dashboard Development</li>
-
-<li>Artificial Intelligence Integration</li>
-
-<li>Computer Vision Research</li>
-
-<li>Construction Material Research</li>
-
-<li>Structural Defect Analysis</li>
-
-<li>Testing & Validation</li>
-
-<li>Technical Documentation</li>
-
-<li>UI Design & Development</li>
-
-</ul>
-
-</div>
-
-""",unsafe_allow_html=True)
-
-with d2:
-
-    st.markdown("""
-
-<div class="card">
-
-<h2>👷 Laiba Mulani</h2>
-
-<hr>
-
-<b>Role</b>
-
-<br>
-
-Civil Engineering Intern
-
-<br><br>
-
-<b>Project Contributions</b>
-
-<ul>
-
-<li>Dashboard Development</li>
-
-<li>Artificial Intelligence Integration</li>
-
-<li>Computer Vision Research</li>
-
-<li>Construction Material Research</li>
-
-<li>Structural Defect Analysis</li>
-
-<li>Testing & Validation</li>
-
-<li>Technical Documentation</li>
-
-<li>UI Design & Development</li>
-
-</ul>
-
-</div>
-
-""",unsafe_allow_html=True)
-
-st.write("")
-st.divider()
+elif guide_section == "⚡ AI vs. Manual ROI Calculator":
+    st.markdown("## ⚡ Inspection Efficiency & ROI Calculator")
+    st.caption("Calculate the time and financial savings of adopting AI-powered visual inspections for your team.")
+
+    col_in1, col_in2 = st.columns(2)
+
+    with col_in1:
+        num_sites = st.slider("Buildings Inspected per Month:", 1, 50, 12)
+        manual_hours = st.slider("Manual Inspection Hours per Building:", 2.0, 16.0, 6.0)
+    with col_in2:
+        engineer_rate = st.slider("Engineer Hourly Rate ($/hr or local currency):", 20, 200, 65)
+        ai_speedup = st.slider("Estimated AI Inspection Time Reduction (%):", 40, 90, 75)
+
+    # Calculations
+    manual_total_hours = num_sites * manual_hours
+    manual_cost = manual_total_hours * engineer_rate
+
+    ai_total_hours = manual_total_hours * (1 - (ai_speedup / 100.0))
+    ai_cost = ai_total_hours * engineer_rate
+
+    hours_saved = manual_total_hours - ai_total_hours
+    money_saved = manual_cost - ai_cost
+
+    st.write("")
+    m_c1, m_c2, m_c3 = st.columns(3)
+
+    with m_c1:
+        st.markdown(f"""
+        <div class="dark-card" style="text-align:center;">
+            <p style="color:#94A3B8; margin:0;">Monthly Time Saved</p>
+            <h2 class="accent-cyan" style="font-size:36px; margin:5px 0;">{hours_saved:.1f} hrs</h2>
+            <p style="font-size:12px; color:#10B981;">⚡ {ai_speedup}% Faster Workflows</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with m_c2:
+        st.markdown(f"""
+        <div class="dark-card" style="text-align:center;">
+            <p style="color:#94A3B8; margin:0;">Monthly Cost Savings</p>
+            <h2 class="accent-green" style="font-size:36px; margin:5px 0;">${money_saved:,.0f}</h2>
+            <p style="font-size:12px; color:#10B981;">💰 Reduced Engineering Overhead</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with m_c3:
+        st.markdown(f"""
+        <div class="dark-card" style="text-align:center;">
+            <p style="color:#94A3B8; margin:0;">Annual Projected Savings</p>
+            <h2 class="accent-orange" style="font-size:36px; margin:5px 0;">${(money_saved * 12):,.0f}</h2>
+            <p style="font-size:12px; color:#38BDF8;">📈 Scalable Inspection Capacity</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Plotly Comparison Chart
+    df_calc = pd.DataFrame({
+        "Method": ["Traditional Manual Audit", "CONSTRUCTVISION AI"],
+        "Hours Spent": [manual_total_hours, ai_total_hours],
+        "Cost ($)": [manual_cost, ai_cost]
+    })
+
+    fig = px.bar(
+        df_calc, x="Method", y=["Hours Spent", "Cost ($)"],
+        barmode="group",
+        title="Monthly Resource Consumption Comparison",
+        template="plotly_dark",
+        color_discrete_sequence=["#EF4444", "#38BDF8"]
+    )
+    fig.update_layout(paper_bgcolor="#1E293B", plot_bgcolor="#1E293B")
+    st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================================
-# READY TO START
+# SECTION 5: BEST PRACTICES
 # ==========================================================
+elif guide_section == "📋 Best Practices & Guidelines":
+    st.markdown("## 📋 Civil Engineering Best Practices")
 
-st.markdown("""
+    col_p1, col_p2 = st.columns(2)
 
-<div class="section">
+    with col_p1:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-cyan">📷 Image Acquisition Rules</h3>
+            <ul style="line-height:1.8; color:#CBD5E1;">
+                <li><b>Perpendicular Alignment:</b> Capture structural faces at 90-degree straight-on camera angles.</li>
+                <li><b>Distance Standard:</b> Maintain a distance of 0.5m to 1.5m for surface crack measurement.</li>
+                <li><b>Lighting Uniformity:</b> Avoid strong direct shadows across concrete surfaces.</li>
+                <li><b>Scale Reference:</b> Place a standard scale ruler or coin near critical cracks for precise measurement.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-<h2 style="text-align:center;">
+    with col_p2:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-orange">🏗️ Engineering Verification Rules</h3>
+            <ul style="line-height:1.8; color:#CBD5E1;">
+                <li><b>Human-in-the-Loop:</b> AI predictions serve as decision-support; final structural sign-offs require a licensed Civil Engineer.</li>
+                <li><b>Destructive Testing:</b> Combine visual AI detection with ultrasonic pulse velocity or rebound hammer tests for deep void checks.</li>
+                <li><b>Environmental Factors:</b> Cross-check crack patterns with soil settlement logs and seismic history.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-🚀 Ready to Start Your Inspection?
+# ==========================================================
+# SECTION 6: PRACTICE KNOWLEDGE CHECK
+# ==========================================================
+elif guide_section == "💡 Practice Knowledge Check":
+    st.markdown("## 💡 Engineering Knowledge Check")
+    st.caption("Quick 3-question self-test to verify your understanding of structural defect classification.")
 
-</h2>
+    with st.form("quiz_form"):
+        q1 = st.radio(
+            "1. What is the primary cause of diagonal cracking near column-beam joints?",
+            ["Concrete Curing Shrinkage", "Shear Stress Concentration", "Plaster Deterioration", "Superficial Paint Flaking"]
+        )
 
-<p style="text-align:center;">
+        q2 = st.radio(
+            "2. When spalling exposes rusted rebar, what is the recommended immediate repair?",
+            ["Apply standard interior paint", "Rust removal, anti-corrosive coating & polymer concrete jacketing", "Fill with fine aggregate sand only", "No action needed"]
+        )
 
-You are now familiar with the CONSTRUCTVISION AI workflow.
+        q3 = st.radio(
+            "3. Does CONSTRUCTVISION AI replace the necessity of a certified Civil Engineer on site?",
+            ["Yes, it completely replaces human engineers", "No, it acts as an intelligent decision-support assistant"]
+        )
 
-Proceed to the <b>AI Inspection</b> module from the
-sidebar to begin analysing residential construction
-images using Artificial Intelligence.
+        submit_quiz = st.form_submit_button("Submit Assessment")
 
-</p>
+    if submit_quiz:
+        score = 0
+        if q1 == "Shear Stress Concentration": score += 1
+        if q2 == "Rust removal, anti-corrosive coating & polymer concrete jacketing": score += 1
+        if q3 == "No, it acts as an intelligent decision-support assistant": score += 1
 
-</div>
+        if score == 3:
+            st.success("🎉 Perfect Score! 3/3 - You are ready to conduct AI site inspections.")
+        else:
+            st.warning(f"You scored {score}/3. Review the Best Practices module and try again.")
 
-""",unsafe_allow_html=True)
+# ==========================================================
+# SECTION 7: INTERACTIVE FAQ
+# ==========================================================
+elif guide_section == "❓ Interactive FAQ":
+    st.markdown("## ❓ Frequently Asked Questions")
 
-st.success("✔ Tutorial Completed Successfully. You are ready to use CONSTRUCTVISION AI.")
+    with st.expander("📷 What types of residential structures can be inspected?"):
+        st.write("CONSTRUCTVISION AI is trained on Reinforced Cement Concrete (RCC) frames, brick masonry walls, structural columns, beams, floor slabs, and foundation footings.")
 
-st.write("")
-st.divider()
+    with st.expander("🤖 How does the computer vision model detect cracks?"):
+        st.write("The system utilizes object detection algorithms trained on labeled civil engineering datasets to recognize contrast gradients, texture breaks, and linear defect geometries.")
+
+    with st.expander("📄 Can I export generated inspection reports?"):
+        st.write("Yes, reports can be downloaded as structured text files (.txt) or compiled directly into formatted engineering logs in the Report Generator module.")
+
+# ==========================================================
+# SECTION 8: TEAM & CREDITS
+# ==========================================================
+elif guide_section == "👷 Team & Credits":
+    st.markdown("## 👷 Development Team")
+
+    dev1, dev2 = st.columns(2)
+
+    with dev1:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-cyan">👷 Ritika Bhumkar</h3>
+            <p><b>Role:</b> Civil Engineering Intern & AI Developer</p>
+            <hr style="border-color:#334155;">
+            <p style="font-size:14px; color:#CBD5E1;">
+                • System Architecture & Streamlit UI Development<br>
+                • Deep Learning Model Integration & Research<br>
+                • Structural Defect Dataset Annotation<br>
+                • Concrete Material Knowledge Library Setup
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with dev2:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-orange">👷 Laiba Mulani</h3>
+            <p><b>Role:</b> Civil Engineering Intern & AI Developer</p>
+            <hr style="border-color:#334155;">
+            <p style="font-size:14px; color:#CBD5E1;">
+                • System Architecture & Streamlit UI Development<br>
+                • Computer Vision Pipeline Design<br>
+                • Structural Damage Risk Grading Rules<br>
+                • Technical Documentation & Testing
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================================
 # FOOTER
 # ==========================================================
-
-st.markdown("""
-
-<div class="footer">
-
-<h2>🏗 CONSTRUCTVISION AI</h2>
-
-<p>
-
-AI Powered Residential Construction Inspection Platform
-
-</p>
-
-<hr>
-
-<p>
-
-Designed & Developed By
-
-<br><br>
-
-<b>Ritika Bhumkar</b>
-
-&nbsp;&nbsp;|&nbsp;&nbsp;
-
-<b>Laiba Mulani</b>
-
-</p>
-
-<p>
-
-Civil Engineering Internship Project
-
-</p>
-
-<p>
-
-Artificial Intelligence • Computer Vision • Civil Engineering
-
-</p>
-
-</div>
-
-""",unsafe_allow_html=True)
-
 st.write("")
-
-st.caption("© 2026 CONSTRUCTVISION AI | Professional Engineering Dashboard")
+st.divider()
+st.markdown("""
+<div style="text-align:center; padding:15px; color:#64748B; font-size:13px;">
+    <b>CONSTRUCTVISION AI</b> | Designed & Developed by <b>Ritika Bhumkar</b> & <b>Laiba Mulani</b><br>
+    Department of Civil Engineering Internship Project © 2026
+</div>
+""", unsafe_allow_html=True)

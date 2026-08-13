@@ -17,7 +17,7 @@ Open `http://127.0.0.1:8000/docs` for the API contract. See `docs/PRODUCT_REBUIL
 Run the portfolio and workspace:
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --server.port 8501
+.\.venv\Scripts\python.exe -m streamlit run main.py --server.address 127.0.0.1 --server.port 8501
 ```
 
 Open `http://127.0.0.1:8501`.

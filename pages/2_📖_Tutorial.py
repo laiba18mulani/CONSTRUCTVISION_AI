@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -67,6 +69,22 @@ st.markdown("""
         transform: translateY(-3px);
     }
 
+    /* Comparison Card Styling */
+    .comparison-card-manual {
+        background: #1E1B18;
+        border: 1px solid #7C2D12;
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .comparison-card-ai {
+        background: #061E29;
+        border: 1px solid #0369A1;
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
     /* Hero Banner */
     .hero-dark {
         background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
@@ -86,6 +104,7 @@ st.markdown("""
     .accent-cyan { color: #38BDF8 !important; }
     .accent-orange { color: #F97316 !important; }
     .accent-green { color: #10B981 !important; }
+    .accent-red { color: #EF4444 !important; }
 
     /* Custom Buttons */
     .stButton>button {
@@ -123,9 +142,11 @@ with st.sidebar:
         "Tutorial Navigation",
         [
             "🏠 Platform Overview",
+            "🔄 Manual vs. AI Inspection",
             "⚙️ Interactive Workflow Stepper",
             "🧱 Dashboard Module Guide",
             "⚡ AI vs. Manual ROI Calculator",
+            "⚖️ Advantages & Disadvantages",
             "📋 Best Practices & Guidelines",
             "💡 Practice Knowledge Check",
             "❓ Interactive FAQ",
@@ -134,7 +155,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.info("💡 **Tip:** Go through the workflow stepper before starting your first AI visual site audit.")
+    st.info("💡 **Tip:** Check the **Manual vs. AI Inspection** section to see step-by-step comparative workflows.")
     st.caption("Version 2.4 Dark Blueprint | © 2026")
 
 # ==========================================================
@@ -182,7 +203,81 @@ if guide_section == "🏠 Platform Overview":
         """, unsafe_allow_html=True)
 
 # ==========================================================
-# SECTION 2: INTERACTIVE WORKFLOW STEPPER
+# SECTION 2: MANUAL VS. AI INSPECTION (NEW SECTION)
+# ==========================================================
+elif guide_section == "🔄 Manual vs. AI Inspection":
+    st.markdown("## 🔄 Traditional Manual Inspection vs. AI Digital Workflow")
+    st.caption("How civil engineers historically conducted structural audits vs. how CONSTRUCTVISION AI modernizes the process.")
+
+    st.write("")
+
+    # Visual Workflow Timeline Simulation (Plotly Chart)
+    st.markdown("### ⏱️ Time & Labor Allocation Breakdown")
+    
+    tasks_df = pd.DataFrame([
+        dict(Task="1. Site Preparation & Scaffolding", Method="Manual Inspection", Duration=2.0, Details="Erecting ladders/scaffolding to access high columns and beams"),
+        dict(Task="2. Visual Surface Inspection", Method="Manual Inspection", Duration=3.5, Details="Engineers inspect with flashlights, magnifying lenses, and crack gauges"),
+        dict(Task="3. Manual Measurement & Sketching", Method="Manual Inspection", Duration=2.5, Details="Hand-drawing crack maps on paper clipboards and using calipers"),
+        dict(Task="4. Office Report Compilation", Method="Manual Inspection", Duration=4.0, Details="Typing observations, formatting photos, calculating repair estimates in Excel"),
+        
+        dict(Task="1. Drone/Phone Image Capture", Method="CONSTRUCTVISION AI", Duration=0.5, Details="Capturing high-res photos via smartphone, drone, or IoT cameras"),
+        dict(Task="2. AI Crack & Spall Detection", Method="CONSTRUCTVISION AI", Duration=0.1, Details="Instant computer vision bounding boxes and severity scoring (< 2 sec)"),
+        dict(Task="3. Automated 3D Risk Mapping", Method="CONSTRUCTVISION AI", Duration=0.2, Details="Automatic overlay on 3D building twin with live strain telemetry"),
+        dict(Task="4. 1-Click PDF Report Export", Method="CONSTRUCTVISION AI", Duration=0.2, Details="Instant generation of standardized audit logs with cost estimates")
+    ])
+
+    fig_timeline = px.bar(
+        tasks_df, 
+        x="Duration", 
+        y="Task", 
+        color="Method", 
+        orientation='h',
+        title="Inspection Hours Required per Structural Component",
+        labels={"Duration": "Hours Required"},
+        template="plotly_dark",
+        color_discrete_map={"Manual Inspection": "#EF4444", "CONSTRUCTVISION AI": "#38BDF8"},
+        hover_data=["Details"]
+    )
+    fig_timeline.update_layout(paper_bgcolor="#1E293B", plot_bgcolor="#1E293B", height=420)
+    st.plotly_chart(fig_timeline, use_container_width=True)
+
+    st.markdown("---")
+    st.markdown("### 🔍 Step-by-Step Methodological Comparison")
+
+    col_m1, col_a1 = st.columns(2)
+
+    with col_m1:
+        st.markdown("""
+        <div class="comparison-card-manual">
+            <h3 class="accent-orange">🔨 Traditional Manual Workflow</h3>
+            <p style="color:#CBD5E1; font-size:14px;">How engineers traditionally inspect buildings:</p>
+            <ol style="color:#94A3B8; font-size:13px; line-height:1.7;">
+                <li><b>Visual Observation:</b> Engineers walk around the site using flashlights, measuring tapes, and crack width comparison cards (optical scales).</li>
+                <li><b>Physical Marking:</b> Cracks are marked directly on concrete faces using chalk, paint, or masking tape with hand-written dates.</li>
+                <li><b>Paper Logbook Recording:</b> Crack dimensions, location references, and visual notes are handwritten into field clipboards.</li>
+                <li><b>Destructive Tapping:</b> Using a tapping hammer (or rebound hammer) to listen for hollow sounds indicating internal concrete delamination.</li>
+                <li><b>Manual Report Writing:</b> Returning to the office, downloading camera photos, cropping images, typing Word documents, and manually estimating repair quantities.</li>
+            </ol>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_a1:
+        st.markdown("""
+        <div class="comparison-card-ai">
+            <h3 class="accent-cyan">🤖 CONSTRUCTVISION AI Workflow</h3>
+            <p style="color:#CBD5E1; font-size:14px;">How the modern digital twin platform operates:</p>
+            <ol style="color:#94A3B8; font-size:13px; line-height:1.7;">
+                <li><b>Multi-Sensor Image Capture:</b> High-res photo uploaded directly via smartphone, drone feed, or fixed CCTV camera.</li>
+                <li><b>Sub-Pixel AI Computer Vision:</b> YOLO neural network identifies micro-cracks (<0.1mm), spalling, rebar exposure, and honeycombing instantly.</li>
+                <li><b>Automated Code Compliance:</b> Software maps crack widths against standard civil codes (IS 456 / ACI 318) to assign hazard levels (Low, Med, Critical).</li>
+                <li><b>3D Twin Spatial Integration:</b> Defect coordinates are mapped onto a interactive 3D building frame with IoT strain gauge overlays.</li>
+                <li><b>1-Click Audit & Costing:</b> Instant cost estimation for epoxy grouting/jacketing and downloadable PDF/text audit reports.</li>
+            </ol>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ==========================================================
+# SECTION 3: INTERACTIVE WORKFLOW STEPPER
 # ==========================================================
 elif guide_section == "⚙️ Interactive Workflow Stepper":
     st.markdown("## ⚙️ Interactive Inspection Workflow Pipeline")
@@ -227,7 +322,7 @@ elif guide_section == "⚙️ Interactive Workflow Stepper":
             <h3 class="accent-green">Phase 3: Civil Engineering Assessment 🏗️</h3>
             <p><b>Objective:</b> Evaluate structural threat level and determine remediation requirements.</p>
             <ul>
-                <li><b>Low Severity:</b> Hairline hairline crazing (< 0.2 mm width) - Seal & monitor.</li>
+                <li><b>Low Severity:</b> Hairline crazing (< 0.2 mm width) - Seal & monitor.</li>
                 <li><b>Medium Severity:</b> Flexural cracking (0.2 mm - 1.5 mm) - Polymer resin injection.</li>
                 <li><b>High Severity:</b> Spalling with exposed reinforcement steel - Jacketing & structural repair.</li>
             </ul>
@@ -247,13 +342,11 @@ elif guide_section == "⚙️ Interactive Workflow Stepper":
         """, unsafe_allow_html=True)
 
 # ==========================================================
-# SECTION 3: DASHBOARD MODULE GUIDE
+# SECTION 4: DASHBOARD MODULE GUIDE
 # ==========================================================
 elif guide_section == "🧱 Dashboard Module Guide":
     st.markdown("## 🧱 Platform Module Explorer")
     st.caption("Explore what each module inside CONSTRUCTVISION AI does.")
-
-    tab1, tab2, tab3, tab4 = st.columns(4)
 
     m1, m2 = st.columns(2)
 
@@ -298,7 +391,7 @@ elif guide_section == "🧱 Dashboard Module Guide":
         """, unsafe_allow_html=True)
 
 # ==========================================================
-# SECTION 4: AI VS MANUAL ROI CALCULATOR
+# SECTION 5: AI VS MANUAL ROI CALCULATOR
 # ==========================================================
 elif guide_section == "⚡ AI vs. Manual ROI Calculator":
     st.markdown("## ⚡ Inspection Efficiency & ROI Calculator")
@@ -371,7 +464,65 @@ elif guide_section == "⚡ AI vs. Manual ROI Calculator":
     st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================================
-# SECTION 5: BEST PRACTICES
+# SECTION 6: ADVANTAGES & DISADVANTAGES (NEW SECTION)
+# ==========================================================
+elif guide_section == "⚖️ Advantages & Disadvantages":
+    st.markdown("## ⚖️ Engineering Trade-Off Analysis: AI vs. Manual")
+    st.caption("Objective analysis of benefits, limitations, and operational trade-offs of AI-driven structural inspection.")
+
+    st.write("")
+
+    col_adv, col_dis = st.columns(2)
+
+    with col_adv:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-green">✅ Advantages of CONSTRUCTVISION AI</h3>
+            <ul style="line-height: 1.8; color: #CBD5E1; font-size:14px;">
+                <li><b>⚡ Exponential Speed:</b> Reduces component visual inspection time from hours to seconds (< 2 sec inference).</li>
+                <li><b>🎯 Elimination of Human Bias:</b> Standardizes crack severity grading based on codified engineering algorithms rather than subjective technician opinion.</li>
+                <li><b>🧗 Safety Enhancement:</b> Drones and long-range telephoto cameras can inspect high-rise facades, bridges, and roof beams without risking human lives on scaffolding.</li>
+                <li><b>📊 Sub-Pixel Precision:</b> Detects micro-cracks (<0.1 mm width) that are virtually invisible to the naked human eye during routine walkthroughs.</li>
+                <li><b>📁 Historical Digital Twin Logs:</b> Creates searchable digital archives with temporal tracking (comparing crack growth over 6 months).</li>
+                <li><b>💰 Significant Cost Savings:</b> Saves up to 75% in engineering field hours, lowering overall audit costs.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_dis:
+        st.markdown("""
+        <div class="dark-card">
+            <h3 class="accent-red">⚠️ Disadvantages & Practical Constraints</h3>
+            <ul style="line-height: 1.8; color: #CBD5E1; font-size:14px;">
+                <li><b>🔍 Surface-Only Visibility:</b> Computer vision models only detect surface defects; internal voids or deep sub-surface rebar corrosion still require ultrasonic pulse or rebound hammer tests.</li>
+                <li><b>💡 Environmental Sensitivity:</b> Extreme darkness, heavy dust, or mud splatters can obscure concrete surfaces and reduce AI accuracy.</li>
+                <li><b>🌐 Hardware & Connectivity Needs:</b> Requires high-resolution camera gear and reliable compute power for high-throughput batch processing.</li>
+                <li><b>⚖️ Legal & Certification Mandate:</b> AI predictions serve as decision-support; legal building safety sign-offs strictly mandate human engineering endorsement.</li>
+                <li><b>🎨 Surface False Positives:</b> Paint scuffs, electrical cables, or cobwebs can occasionally be misclassified as cracks if lighting parameters are poor.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 📊 Direct Feature Matrix Comparison")
+
+    feature_data = {
+        "Evaluation Criterion": [
+            "Inspection Speed", 
+            "High-Altitude Access Safety", 
+            "Micro-Crack Detection (<0.1mm)", 
+            "Subjective Human Bias", 
+            "Internal Void Detection", 
+            "Instant PDF Audit Generation", 
+            "Historical Trend Tracking"
+        ],
+        "Traditional Manual Method": ["Slow (Hours/Days)", "High Risk (Ladders/Scaffolding)", "Low / Missed easily", "High (Varies by engineer)", "Possible (Rebound Hammer)", "Slow (Manual Typing)", "Difficult (Paper Records)"],
+        "CONSTRUCTVISION AI Platform": ["Ultra-Fast (< 2 sec)", "Zero Risk (Drone/Remote Cameras)", "Ultra-High (Sub-pixel AI)", "Zero (Standardized Rules)", "Requires Hybrid NDT Tools", "Instant (Automated 1-Click)", "Seamless (3D Digital Twin)"]
+    }
+    st.table(pd.DataFrame(feature_data))
+
+# ==========================================================
+# SECTION 7: BEST PRACTICES
 # ==========================================================
 elif guide_section == "📋 Best Practices & Guidelines":
     st.markdown("## 📋 Civil Engineering Best Practices")
@@ -404,7 +555,7 @@ elif guide_section == "📋 Best Practices & Guidelines":
         """, unsafe_allow_html=True)
 
 # ==========================================================
-# SECTION 6: PRACTICE KNOWLEDGE CHECK
+# SECTION 8: PRACTICE KNOWLEDGE CHECK
 # ==========================================================
 elif guide_section == "💡 Practice Knowledge Check":
     st.markdown("## 💡 Engineering Knowledge Check")
@@ -440,7 +591,7 @@ elif guide_section == "💡 Practice Knowledge Check":
             st.warning(f"You scored {score}/3. Review the Best Practices module and try again.")
 
 # ==========================================================
-# SECTION 7: INTERACTIVE FAQ
+# SECTION 9: INTERACTIVE FAQ
 # ==========================================================
 elif guide_section == "❓ Interactive FAQ":
     st.markdown("## ❓ Frequently Asked Questions")
@@ -455,7 +606,7 @@ elif guide_section == "❓ Interactive FAQ":
         st.write("Yes, reports can be downloaded as structured text files (.txt) or compiled directly into formatted engineering logs in the Report Generator module.")
 
 # ==========================================================
-# SECTION 8: TEAM & CREDITS
+# SECTION 10: TEAM & CREDITS
 # ==========================================================
 elif guide_section == "👷 Team & Credits":
     st.markdown("## 👷 Development Team")

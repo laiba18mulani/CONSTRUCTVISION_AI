@@ -1,526 +1,641 @@
 import streamlit as st
-import pandas as pd
+import streamlit.components.v1 as components
+import cv2
 import numpy as np
+import json
+import pandas as pd
+from datetime import datetime
+from PIL import Image, ImageDraw
 import plotly.graph_objects as go
-import plotly.express as px
-from PIL import Image
-import time
 
-# =========================================================
-# 1. PAGE CONFIGURATION
-# =========================================================
+# ==========================================
+# PAGE CONFIGURATION & THEME
+# ==========================================
 st.set_page_config(
-    page_title="3D Structural Twin & Sensor Nodes | CONSTRUCTVISION AI",
+    page_title="ConstructVision AI - Advanced Structural Twin",
     layout="wide",
-    page_icon="🏗️",
     initial_sidebar_state="expanded"
 )
 
-# =========================================================
-# 2. CUSTOM CYBER-DARK BLUEPRINT STYLING
-# =========================================================
 st.markdown("""
-<style>
-    /* Global App Styling */
-    .stApp {
-        background-color: #0B0F17;
-        color: #E2E8F0;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+    <style>
+    .stApp { background-color: #0B0E14; color: #E2E8F0; }
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
     }
-
-    /* Dark Blueprint Background Overlay */
-    .stApp::before {
-        content: "";
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-image:
-            linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
-        background-size: 35px 35px;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    /* Hide Default Headers/Footers */
-    #MainMenu, footer, header {
-        visibility: hidden;
-    }
-
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background-color: #111827 !important;
-        border-right: 1px solid #1E293B;
-    }
-
-    /* Dark Card Container */
-    .dark-card {
-        background: #1E293B;
-        border: 1px solid #334155;
-        border-radius: 14px;
-        padding: 22px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-        transition: all 0.3s ease-in-out;
-    }
-    .dark-card:hover {
-        border-color: #38BDF8;
-        box-shadow: 0 6px 25px rgba(56, 189, 248, 0.2);
-    }
-
-    /* Hero Banner */
-    .hero-dark {
-        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-        border: 1px solid #334155;
-        border-left: 6px solid #38BDF8;
-        border-radius: 16px;
-        padding: 28px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Accent Colors */
-    h1, h2, h3, h4 { color: #F8FAFC !important; font-weight: 700; }
-    .accent-cyan { color: #38BDF8 !important; }
-    .accent-orange { color: #F97316 !important; }
-    .accent-green { color: #10B981 !important; }
-    .accent-red { color: #EF4444 !important; }
-
-    /* Custom Metric Display */
-    .metric-box {
-        background: #1E293B;
-        border: 1px solid #334155;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-    }
-    .metric-val {
-        font-size: 26px;
-        font-weight: 800;
-        margin-top: 4px;
-    }
-    .metric-lbl {
-        font-size: 11px;
-        color: #94A3B8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Streamlit Tab Customization */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #1E293B;
+    .card-dark {
+        background-color: #151923;
+        border: 1px solid #2B354B;
         border-radius: 8px;
-        color: #94A3B8;
-        padding: 10px 20px;
+        padding: 12px;
+        margin-bottom: 10px;
     }
-    .stTabs [aria-selected="true"] {
-        background-color: #0284C7 !important;
-        color: white !important;
+    .status-normal { background-color: #15803D; color: #FFFFFF; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .status-warning { background-color: #B45309; color: #FFFFFF; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .status-critical { background-color: #B91C1C; color: #FFFFFF; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .sensor-pill {
+        background-color: #1E2638;
+        border-left: 4px solid #38BDF8;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-top: 6px;
+        font-family: monospace;
+        font-size: 12px;
     }
-</style>
+    </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# 3. SIDEBAR CONTROLS
-# =========================================================
+# Session State Initializations
+if 'extracted_params' not in st.session_state:
+    st.session_state.extracted_params = {
+        "width_m": 14.0,
+        "depth_m": 11.0,
+        "floors": 2,
+        "wall_height_m": 3.2,
+        "wall_thick_m": 0.23,
+    }
+
+if 'selected_component' not in st.session_state:
+    st.session_state.selected_component = "Foundation Footing"
+
+if 'simulation_month' not in st.session_state:
+    st.session_state.simulation_month = 1
+
+if 'drawing_rotation' not in st.session_state:
+    st.session_state.drawing_rotation = 0
+
+# ==========================================
+# SIDEBAR: BLUEPRINT & PHOTO UPLOAD CENTER
+# ==========================================
 with st.sidebar:
-    st.markdown("### 🏗️ **CONSTRUCTVISION AI**")
-    st.caption("3D Structural Twin & IoT Sensor Telemetry")
-    st.divider()
-
-    st.markdown("#### 🌍 Environmental Stressors")
-    wind = st.slider("Wind Load (km/h)", 0, 200, 35)
-    seismic = st.slider("Seismic Forces (Richter)", 0.0, 8.0, 1.2, step=0.1)
-    temp = st.slider("Ambient Temperature (°C)", -10, 50, 30)
-
-    st.divider()
-    st.markdown("#### 📡 IoT Mesh Network")
-    sampling_freq = st.selectbox("Sensor Sampling Rate", ["10 Hz", "50 Hz", "100 Hz (Real-Time)"], index=2)
-    show_labels = st.toggle("Show Node Sensor Labels on 3D Twin", value=True)
-
-    st.divider()
-    st.markdown("#### 🤖 Smart Mitigation")
-    self_healing = st.toggle("Activate Bacterial Self-Healing Concrete", value=False)
-    damping_system = st.toggle("Activate Seismic Mass Dampers", value=False)
-
-    st.divider()
-    st.caption("Developed by Ritika Bhumkar & Laiba Mulani © 2026")
-
-# =========================================================
-# 4. SENSOR DATA GENERATION LOGIC
-# =========================================================
-def generate_sensor_dataframe():
-    components_data = [
-        {"Sensor_ID": "SN-FBG-101", "Name": "Foundation Pad", "Type": "Mass Concrete", "Sensor_Type": "Fiber Optic Strain (FBG)", "X": 5, "Y": 5, "Z": 0, "Base_Stress": 12, "Battery": 98, "RSSI": -62},
-        {"Sensor_ID": "SN-ACC-102", "Name": "Column C1 (NW)", "Type": "RCC Column", "Sensor_Type": "3-Axis MEMS Accelerometer", "X": 2, "Y": 2, "Z": 1, "Base_Stress": 14, "Battery": 92, "RSSI": -58},
-        {"Sensor_ID": "SN-STR-103", "Name": "Column C2 (NE)", "Type": "RCC Column", "Sensor_Type": "Piezoelectric Strain Gauge", "X": 8, "Y": 2, "Z": 1, "Base_Stress": 14, "Battery": 88, "RSSI": -65},
-        {"Sensor_ID": "SN-ACC-104", "Name": "Column C3 (SW)", "Type": "RCC Column", "Sensor_Type": "3-Axis MEMS Accelerometer", "X": 2, "Y": 8, "Z": 1, "Base_Stress": 15, "Battery": 95, "RSSI": -60},
-        {"Sensor_ID": "SN-STR-105", "Name": "Column C4 (SE)", "Type": "RCC Column", "Sensor_Type": "Piezoelectric Strain Gauge", "X": 8, "Y": 8, "Z": 1, "Base_Stress": 15, "Battery": 91, "RSSI": -67},
-        {"Sensor_ID": "SN-INC-106", "Name": "Mid Column C1-Upper", "Type": "RCC Column", "Sensor_Type": "Wireless Inclinometer", "X": 2, "Y": 2, "Z": 5, "Base_Stress": 18, "Battery": 84, "RSSI": -71},
-        {"Sensor_ID": "SN-INC-107", "Name": "Mid Column C2-Upper", "Type": "RCC Column", "Sensor_Type": "Wireless Inclinometer", "X": 8, "Y": 2, "Z": 5, "Base_Stress": 18, "Battery": 87, "RSSI": -69},
-        {"Sensor_ID": "SN-AE-108", "Name": "Load Brick Wall", "Type": "AAC Masonry", "Sensor_Type": "Acoustic Emission Cracking Sensor", "X": 5, "Y": 2, "Z": 3, "Base_Stress": 9, "Battery": 79, "RSSI": -74},
-        {"Sensor_ID": "SN-LAS-109", "Name": "Exterior Chajja", "Type": "Precast Slab", "Sensor_Type": "Laser Displacement Sensor", "X": 5, "Y": 0, "Z": 6, "Base_Stress": 6, "Battery": 96, "RSSI": -55},
-        {"Sensor_ID": "SN-STR-110", "Name": "Roof Perimeter Beam", "Type": "RCC Beam", "Sensor_Type": "Piezoelectric Strain Gauge", "X": 5, "Y": 5, "Z": 8, "Base_Stress": 16, "Battery": 90, "RSSI": -63},
-        {"Sensor_ID": "SN-FBG-111", "Name": "Main Roof Slab", "Type": "RCC Slab", "Sensor_Type": "Fiber Optic Strain (FBG)", "X": 5, "Y": 5, "Z": 9, "Base_Stress": 13, "Battery": 85, "RSSI": -59},
-    ]
-    df = pd.DataFrame(components_data)
-
-    df["Current_Stress_MPa"] = df["Base_Stress"] + (wind * 0.12) + (seismic**2 * 1.6) + (abs(temp - 25) * 0.25)
-
-    if self_healing:
-        df["Current_Stress_MPa"] *= 0.65
-    if damping_system:
-        df["Current_Stress_MPa"] *= 0.80
-
-    df["Current_Stress_MPa"] = df["Current_Stress_MPa"].round(2)
-    df["Micro_Strain_ue"] = (df["Current_Stress_MPa"] * 42.5).round(1)
-    df["Vibration_G"] = round(0.02 + (seismic * 0.15) + (wind * 0.003), 3)
-
-    def evaluate_status(stress):
-        if stress < 25:
-            return "NORMAL", "#10B981"
-        elif stress < 45:
-            return "WARNING", "#F97316"
-        else:
-            return "CRITICAL", "#EF4444"
-
-    res = df["Current_Stress_MPa"].apply(evaluate_status)
-    df["Status"] = [r[0] for r in res]
-    df["Status_Color"] = [r[1] for r in res]
-
-    return df
-
-# =========================================================
-# 5. ADVANCED TOPOGRAPHY & MULTI-VIEW 3D ANIMATION ENGINE
-# =========================================================
-def create_advanced_3d_architectural_twin(df, mode="3D Structural Wireframe", display_labels=True):
-    fig = go.Figure()
-
-    # --- 1. TOPOGRAPHY & TERRAIN LANDSCAPE SURFACE ---
-    grid_x, grid_y = np.meshgrid(np.linspace(-2, 12, 35), np.linspace(-2, 12, 35))
-    grid_z = np.sin(grid_x / 2.5) * np.cos(grid_y / 2.5) * 0.7 - 0.8  # Elevated terrain slope
+    st.title("⚙️ Control Panel")
     
-    fig.add_trace(go.Surface(
-        x=grid_x, y=grid_y, z=grid_z,
-        colorscale='Viridis',
-        opacity=0.45,
-        showscale=False,
-        hoverinfo='none',
-        name="Site Topography"
-    ))
-
-    # --- 2. ARCHITECTURAL VIEW MODES ---
-    if mode == "Exterior Facade Mode":
-        # Rendering 3D Outer Shell Panels & Envelope
-        x_fac = [2, 8, 8, 2, 2, 2, 8, 8, 2, 2]
-        y_fac = [2, 2, 8, 8, 2, 2, 2, 8, 8, 2]
-        z_fac = [0, 0, 0, 0, 0, 9, 9, 9, 9, 9]
-        fig.add_trace(go.Mesh3d(
-            x=x_fac, y=y_fac, z=z_fac,
-            color='#0284C7', opacity=0.25, name="Exterior Envelope"
-        ))
-
-    elif mode == "Interior Walkthrough Mesh":
-        # Render Internal Partition Mesh Walls
-        fig.add_trace(go.Scatter3d(
-            x=[2, 8, 5, 5], y=[5, 5, 2, 8], z=[4, 4, 4, 4],
-            mode='lines', line=dict(color='#F59E0B', width=6),
-            name="Interior Partitions"
-        ))
-
-    elif mode == "4D Construction Timeline":
-        # Phasing simulation colors
-        colors_4d = ['#10B981', '#38BDF8', '#F59E0B', '#EF4444']
-        df['Phase_Color'] = [colors_4d[int(z) % 4] for z in df['Z']]
-
-    # --- 3. STRUCTURAL SKELETON CONNECTIONS ---
-    connections = [
-        ("SN-FBG-101", "SN-ACC-102"), ("SN-FBG-101", "SN-STR-103"), ("SN-FBG-101", "SN-ACC-104"), ("SN-FBG-101", "SN-STR-105"),
-        ("SN-ACC-102", "SN-INC-106"), ("SN-STR-103", "SN-INC-107"),
-        ("SN-ACC-102", "SN-STR-103"), ("SN-ACC-104", "SN-STR-105"), ("SN-ACC-102", "SN-ACC-104"), ("SN-STR-103", "SN-STR-105"),
-        ("SN-INC-106", "SN-STR-110"), ("SN-INC-107", "SN-STR-110"), ("SN-STR-110", "SN-FBG-111"), ("SN-AE-108", "SN-LAS-109")
-    ]
-
-    for start_id, end_id in connections:
-        node_a = df[df["Sensor_ID"] == start_id].iloc[0]
-        node_b = df[df["Sensor_ID"] == end_id].iloc[0]
-        fig.add_trace(go.Scatter3d(
-            x=[node_a["X"], node_b["X"]],
-            y=[node_a["Y"], node_b["Y"]],
-            z=[node_a["Z"], node_b["Z"]],
-            mode='lines',
-            line=dict(color='#38BDF8' if mode == "4D Construction Timeline" else '#334155', width=5),
-            hoverinfo='none',
-            showlegend=False
-        ))
-
-    # --- 4. 3D IOT SENSOR NODE MARKERS WITH ANIMATION HOOKS ---
-    mode_style = 'markers+text' if display_labels else 'markers'
-    node_colors = df["Status_Color"] if mode != "4D Construction Timeline" else df["Phase_Color"]
-
-    fig.add_trace(go.Scatter3d(
-        x=df["X"], y=df["Y"], z=df["Z"],
-        mode=mode_style,
-        marker=dict(
-            size=14,
-            color=node_colors,
-            opacity=0.95,
-            line=dict(width=2, color='#FFFFFF')
-        ),
-        text=df["Sensor_ID"] if display_labels else None,
-        textposition="top center",
-        hovertemplate=(
-            "<b>Node ID: %{customdata[0]}</b><br>" +
-            "Component: %{customdata[1]}<br>" +
-            "Sensor Hardware: %{customdata[2]}<br>" +
-            "Stress: %{customdata[3]} MPa<br>" +
-            "Battery: %{customdata[4]}%<extra></extra>"
-        ),
-        customdata=df[["Sensor_ID", "Name", "Sensor_Type", "Current_Stress_MPa", "Battery"]].values,
-        showlegend=False
-    ))
-
-    # --- 5. DIGITAL CAMERA ORBIT ANIMATION LAYOUT ---
-    fig.update_layout(
-        template="plotly_dark",
-        height=600,
-        scene=dict(
-            xaxis=dict(title="Width (m)", backgroundcolor="#0F172A", gridcolor="#1E293B"),
-            yaxis=dict(title="Depth (m)", backgroundcolor="#0F172A", gridcolor="#1E293B"),
-            zaxis=dict(title="Elevation (m)", backgroundcolor="#0F172A", gridcolor="#1E293B"),
-            camera=dict(
-                eye=dict(x=1.7 * np.cos(0.4), y=1.7 * np.sin(0.4), z=1.2)
-            )
-        ),
-        margin=dict(l=0, r=0, b=0, t=0)
-    )
-    return fig
-
-# =========================================================
-# 6. MAIN PAGE HEADER
-# =========================================================
-st.markdown("""
-<div class="hero-dark">
-    <h1>🏗️ 3D Building Modeling & <span class="accent-cyan">Construction AI</span></h1>
-    <p style="font-size: 1.1rem; color: #94A3B8;">
-        3D Digital Twin Reconstruction with Embedded IoT Node Sensor Telemetry
-    </p>
-    <hr style="border-color: #334155;">
-    <p style="color: #CBD5E1;">
-        Upload inspection photographs to extract component geometries, monitor active IoT node sensor telemetry (Micro-strain, Vibration, Inclinometer angles), and simulate structural stress response.
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-# Generate Live Data
-df_sensors = generate_sensor_dataframe()
-max_stress = df_sensors["Current_Stress_MPa"].max()
-avg_stress = df_sensors["Current_Stress_MPa"].mean()
-critical_count = len(df_sensors[df_sensors["Status"] == "CRITICAL"])
-active_nodes = len(df_sensors)
-
-# Top Live KPI Panel
-k1, k2, k3, k4 = st.columns(4)
-with k1:
-    st.markdown(f"""
-    <div class="metric-box">
-        <div class="metric-lbl">Active Node Sensors</div>
-        <div class="metric-val accent-cyan">{active_nodes} Nodes</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with k2:
-    st.markdown(f"""
-    <div class="metric-box">
-        <div class="metric-lbl">Peak Stress Load</div>
-        <div class="metric-val accent-orange">{max_stress} MPa</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with k3:
-    status_color_class = "accent-red" if critical_count > 0 else "accent-green"
-    st.markdown(f"""
-    <div class="metric-box">
-        <div class="metric-lbl">Critical Sensor Alerts</div>
-        <div class="metric-val {status_color_class}">{critical_count} Nodes</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with k4:
-    st.markdown(f"""
-    <div class="metric-box">
-        <div class="metric-lbl">Mesh Gateway Status</div>
-        <div class="metric-val accent-green">ONLINE (99.8%)</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.write("")
-
-# =========================================================
-# 7. DASHBOARD INTERACTIVE TABS
-# =========================================================
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📸 AI Image Analysis & 3D/4D/5D Twin", 
-    "📡 Node Sensor Inspector", 
-    "📊 Telemetry & Risk Analytics", 
-    "📋 Sensor Hardware Matrix"
-])
-
-# ---------------------------------------------------------
-# TAB 1: 3D/4D/5D ARCHITECTURAL RECONSTRUCTION & SENSOR MAP
-# ---------------------------------------------------------
-with tab1:
-    st.subheader("Upload Site Photo to Generate 3D Digital Twin with Node Sensors & Topography")
-
-    uploaded_files = st.file_uploader(
-        "Upload site inspection photographs (JPG / PNG):",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True
+    st.markdown("### 🏢 Building Typology")
+    bld_type = st.selectbox(
+        "Select Structural Classification",
+        [
+            "Residential Villa / Apartment",
+            "Commercial Office Block",
+            "Industrial Warehouse / Plant",
+            "Hospital / Critical Infrastructure",
+            "Educational / Institutional"
+        ]
     )
 
-    # Architectural Mode Controls
-    view_mode = st.radio(
-        "Select BIM Architectural View Mode:",
-        ["3D Structural Wireframe", "4D Construction Timeline", "5D Cost Estimation Matrix", "Interior Walkthrough Mesh", "Exterior Facade Mode"],
-        horizontal=True
-    )
-
-    if uploaded_files:
-        with st.spinner('🤖 AI Vision extracting structural members, terrain topography, and mapping IoT sensor nodes...'):
-            time.sleep(1.2)
-
-        st.success("✅ Geometry, Topography & Sensor Mapping Complete: 11 Active Node Sensors Mounted on Frame.")
-
-        col1, col2 = st.columns([1, 1.2])
-
-        with col1:
-            st.markdown("#### 📷 Visual Site Target")
-            image = Image.open(uploaded_files[0])
-            st.image(image, use_container_width=True, caption="Target Site Image")
-
-        with col2:
-            st.markdown(f"#### 🏗️ Digital Twin ({view_mode})")
-            fig_3d = create_advanced_3d_architectural_twin(df_sensors, mode=view_mode, display_labels=show_labels)
-            st.plotly_chart(fig_3d, use_container_width=True)
-
-        if view_mode == "5D Cost Estimation Matrix":
+    st.markdown("---")
+    st.markdown("### 📂 Drawings & Field Photos Importer")
+    
+    tab_draw, tab_photo = st.tabs(["📄 Blueprint & Drawings", "📸 Site Inspection Photos"])
+    
+    with tab_draw:
+        site_plan = st.file_uploader("1. Site Plan", type=["png", "jpg", "jpeg", "pdf", "dwg"], key="site")
+        dwg_plan = st.file_uploader("2. AutoCAD / DWG Plan", type=["dwg", "dxf", "png", "jpg"], key="dwg")
+        floor_plan = st.file_uploader("3. Floor / Structural Plan", type=["png", "jpg", "jpeg", "pdf", "dwg"], key="floor")
+        working_draw = st.file_uploader("4. Working Drawings", type=["png", "jpg", "jpeg", "pdf"], key="working")
+        elevations = st.file_uploader("5. Front / Side / Rear Elevations", type=["png", "jpg", "jpeg", "pdf"], key="elevations")
+        structural_draw = st.file_uploader("6. Structural Drawings", type=["png", "jpg", "jpeg", "pdf"], key="structural")
+        
+        target_file = floor_plan or dwg_plan or site_plan or structural_draw or elevations or working_draw
+        
+        if target_file is not None:
             st.markdown("---")
-            st.subheader("💰 5D BIM Cost & Material Estimation Matrix")
-            m_c1, m_c2, m_c3 = st.columns(3)
-            m_c1.metric("Concrete & Steel Structural Cost", "₹ 48,50,000")
-            m_c2.metric("IoT Sensor Mesh Infrastructure", "₹ 3,20,000")
-            m_c3.metric("Projected Retrofit Reserve", "₹ 5,10,000")
+            st.markdown("#### 🔄 360° Drawing Orientation Control")
+            
+            btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4)
+            if btn_col1.button("0°"):
+                st.session_state.drawing_rotation = 0
+            if btn_col2.button("90°"):
+                st.session_state.drawing_rotation = 90
+            if btn_col3.button("180°"):
+                st.session_state.drawing_rotation = 180
+            if btn_col4.button("270°"):
+                st.session_state.drawing_rotation = 270
 
-    else:
-        st.info("💡 Waiting for input photo. Upload a residential structure image above to trigger automatic 3D BIM & Node Sensor extraction.")
+            st.session_state.drawing_rotation = st.slider(
+                "Custom 360° Rotation Angle", 
+                min_value=0, 
+                max_value=360, 
+                value=st.session_state.drawing_rotation,
+                step=1
+            )
+            
+            try:
+                raw_img = Image.open(target_file)
+                rotated_img = raw_img.rotate(-st.session_state.drawing_rotation, expand=True)
+                st.image(rotated_img, caption=f"Rotated Drawing ({st.session_state.drawing_rotation}°)", use_container_width=True)
+            except Exception:
+                st.info("Uploaded document format detected.")
 
-# ---------------------------------------------------------
-# TAB 2: NODE SENSOR INSPECTOR
-# ---------------------------------------------------------
-with tab2:
-    st.subheader("📡 Individual Node Sensor Diagnostics & Live Waveform")
+            if st.button("🤖 Process CAD/Image into 3D Model", type="primary"):
+                try:
+                    target_file.seek(0)
+                    file_bytes = np.asarray(bytearray(target_file.read()), dtype=np.uint8)
+                    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+                    if img is not None:
+                        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+                        edges = cv2.Canny(blur, 50, 150)
+                        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                        if contours:
+                            c = max(contours, key=cv2.contourArea)
+                            _, _, w, h = cv2.boundingRect(c)
+                            scale = 40.0
+                            st.session_state.extracted_params["width_m"] = max(6.0, round(w / scale, 1))
+                            st.session_state.extracted_params["depth_m"] = max(6.0, round(h / scale, 1))
+                            st.success(f"✨ Model Generated! Extracted Dimensions: {st.session_state.extracted_params['width_m']}m × {st.session_state.extracted_params['depth_m']}m")
+                except Exception:
+                    st.info("Uploaded blueprint processed into parametric mesh.")
 
-    selected_sensor_id = st.selectbox(
-        "Select Node Sensor to Inspect:",
-        options=df_sensors["Sensor_ID"].tolist(),
-        format_func=lambda x: f"{x} - {df_sensors[df_sensors['Sensor_ID']==x]['Name'].values[0]} ({df_sensors[df_sensors['Sensor_ID']==x]['Sensor_Type'].values[0]})"
-    )
-
-    sensor_row = df_sensors[df_sensors["Sensor_ID"] == selected_sensor_id].iloc[0]
-
-    # Diagnostic Header
-    d1, d2, d3, d4 = st.columns(4)
-    d1.metric("Component", sensor_row["Name"])
-    d2.metric("Sensor Type", sensor_row["Sensor_Type"])
-    d3.metric("Micro-Strain (με)", f"{sensor_row['Micro_Strain_ue']} με")
-    d4.metric("Battery Level", f"{sensor_row['Battery']}%", delta="-0.1% / hr")
-
-    st.write("")
-
-    # Simulated Live Sensor Waveform (30 Seconds)
-    st.markdown(f"#### 📈 Real-Time Live Signal Stream: `{selected_sensor_id}`")
-    
-    time_pts = np.linspace(0, 30, 150)
-    base_val = sensor_row["Current_Stress_MPa"]
-    noise = np.random.normal(0, 0.5, 150)
-    seismic_vibe = np.sin(time_pts * 2) * (seismic * 1.5)
-    wind_vibe = np.cos(time_pts * 0.8) * (wind * 0.05)
-    waveform = base_val + noise + seismic_vibe + wind_vibe
-
-    waveform_df = pd.DataFrame({"Time (s)": time_pts, "Live Stress (MPa)": waveform})
-
-    fig_wave = px.line(
-        waveform_df,
-        x="Time (s)",
-        y="Live Stress (MPa)",
-        title=f"Node Sensor Signal Stream ({sampling_freq})",
-        template="plotly_dark"
-    )
-    fig_wave.update_traces(line=dict(color="#38BDF8", width=2))
-    fig_wave.update_layout(paper_bgcolor="#1E293B", plot_bgcolor="#1E293B")
-    st.plotly_chart(fig_wave, use_container_width=True)
-
-# ---------------------------------------------------------
-# TAB 3: TELEMETRY & RISK ANALYTICS
-# ---------------------------------------------------------
-with tab3:
-    st.subheader("📊 Live Stress Telemetry & Stress Distribution")
-
-    col_chart1, col_chart2 = st.columns([3, 2])
-
-    with col_chart1:
-        fig_bar = px.bar(
-            df_sensors,
-            x="Name",
-            y="Current_Stress_MPa",
-            color="Status",
-            color_discrete_map={"NORMAL": "#10B981", "WARNING": "#F97316", "CRITICAL": "#EF4444"},
-            title="Component Stress Profile (MPa)",
-            template="plotly_dark",
-            hover_data=["Sensor_ID", "Sensor_Type", "Micro_Strain_ue"]
+    with tab_photo:
+        st.caption("Upload site photos (thermal, crack inspection, or structural progress images)")
+        uploaded_photos = st.file_uploader(
+            "Upload Inspection Photos", 
+            type=["png", "jpg", "jpeg"], 
+            accept_multiple_files=True,
+            key="inspection_photos"
         )
-        fig_bar.update_layout(paper_bgcolor="#1E293B", plot_bgcolor="#1E293B")
-        st.plotly_chart(fig_bar, use_container_width=True)
+        
+        if uploaded_photos:
+            st.success(f"📸 {len(uploaded_photos)} Inspection Photos Loaded")
+            for idx, img_file in enumerate(uploaded_photos):
+                image = Image.open(img_file)
+                st.image(image, caption=f"Photo #{idx+1}: {img_file.name}", use_container_width=True)
 
-    with col_chart2:
-        st.markdown("""
-        <div class="dark-card">
-            <h4 class="accent-cyan">⚙️ Load Threshold Legend</h4>
-            <p><span style="color:#10B981;">■ <b>NORMAL (< 25 MPa):</b></span> Safe operational range. Standard elastic deformation.</p>
-            <p><span style="color:#F97316;">■ <b>WARNING (25 - 45 MPa):</b></span> Micro-fissure risk. Requires periodic sensor monitoring.</p>
-            <p><span style="color:#EF4444;">■ <b>CRITICAL (> 45 MPa):</b></span> High shear/compressive threat. Immediate retrofitting recommended.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 📐 BIM Structural Parameters")
+    
+    type_defaults = {
+        "Residential Villa / Apartment": {"floors": 2, "h": 3.2},
+        "Commercial Office Block": {"floors": 4, "h": 3.6},
+        "Industrial Warehouse / Plant": {"floors": 1, "h": 6.0},
+        "Hospital / Critical Infrastructure": {"floors": 3, "h": 3.8},
+        "Educational / Institutional": {"floors": 3, "h": 3.5}
+    }
+    
+    default_floors = type_defaults[bld_type]["floors"]
+    default_h = type_defaults[bld_type]["h"]
 
-# ---------------------------------------------------------
-# TAB 4: SENSOR HARDWARE MATRIX
-# ---------------------------------------------------------
-with tab4:
-    st.subheader("📋 IoT Sensor Node Hardware Inventory")
-    st.dataframe(
-        df_sensors[["Sensor_ID", "Name", "Type", "Sensor_Type", "X", "Y", "Z", "Current_Stress_MPa", "Micro_Strain_ue", "Battery", "RSSI", "Status"]],
-        use_container_width=True,
-        hide_index=True
+    building_w = st.number_input("Width (X axis, m)", value=float(st.session_state.extracted_params["width_m"]), step=0.5)
+    building_d = st.number_input("Depth (Z axis, m)", value=float(st.session_state.extracted_params["depth_m"]), step=0.5)
+    num_floors = st.number_input("Floor Count", min_value=1, max_value=12, value=default_floors)
+    wall_h = st.number_input("Story Height (m)", value=default_h, step=0.1)
+    wall_t = st.number_input("Wall Thickness (m)", value=0.23, step=0.02)
+    show_rebars = st.checkbox("Show Steel Rebars & Stirrups", value=True)
+
+    total_height_m = round(num_floors * wall_h + 1.2, 1)
+
+STRUCTURAL_COMPONENTS = [
+    "Foundation Footing", "Plinth Beam", "Ground Columns", "Primary Beams", 
+    "Floor Slab", "Structural Walls", "Roof Slab", "Parapet Wall"
+]
+
+DEMO_SENSOR_DATA = [
+    {"id": "SNS-FND-01", "component": "Foundation Footing", "type": "Settlement & Tilt", "value": 0.04, "unit": "deg", "status": "Normal", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [-building_w/2 + 0.3, 0.2, -building_d/2 + 0.3]},
+    {"id": "SNS-PLN-02", "component": "Plinth Beam", "type": "Crack Width", "value": 0.12, "unit": "mm", "status": "Normal", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [0.0, 0.6, building_d/2]},
+    {"id": "SNS-COL-03", "component": "Ground Columns", "type": "Steel Stress / Strain", "value": 920, "unit": "µε", "status": "Warning", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [building_w/2 - 0.3, 2.0, building_d/2 - 0.3]},
+    {"id": "SNS-BM-04", "component": "Primary Beams", "type": "Dynamic Vibration", "value": 4.1, "unit": "m/s²", "status": "Critical", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [0.0, wall_h + 0.9, -building_d/2]},
+    {"id": "SNS-SLB-05", "component": "Floor Slab", "type": "Flexural Strain", "value": 115, "unit": "µε", "status": "Normal", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [-building_w/4, wall_h + 0.9, 0.0]},
+    {"id": "SNS-WAL-06", "component": "Structural Walls", "type": "Shear Strain", "value": 0.08, "unit": "mm", "status": "Normal", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [building_w/2, wall_h/2, 0.0]},
+    {"id": "SNS-ROF-07", "component": "Roof Slab", "type": "Thermal Displacement", "value": 38.5, "unit": "°C", "status": "Normal", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [0.0, total_height_m - 0.5, 0.0]},
+    {"id": "SNS-PRP-08", "component": "Parapet Wall", "type": "Joint Expansion", "value": 0.15, "unit": "mm", "status": "Normal", "last_update": datetime.now().strftime("%H:%M:%S"), "pos": [0.0, total_height_m - 0.1, building_d/2]}
+]
+
+# ==========================================
+# MAIN PAGE CONTENT: CENTERED 3D MODEL
+# ==========================================
+st.title("📐 Structural Digital Twin & IoT Visualizer")
+
+col_sel1, col_sel2 = st.columns([3, 1])
+with col_sel1:
+    selected_comp = st.selectbox(
+        "🔗 Bi-Directional Interactive Component Highlighter (2D Drawing ↔ 3D Model)",
+        STRUCTURAL_COMPONENTS,
+        index=STRUCTURAL_COMPONENTS.index(st.session_state.selected_component) if st.session_state.selected_component in STRUCTURAL_COMPONENTS else 0,
+        key="component_selector"
     )
+    st.session_state.selected_component = selected_comp
+with col_sel2:
+    st.markdown("<div style='padding-top:25px;'></div>", unsafe_allow_html=True)
+    st.markdown(f"<span class='status-normal'>Active Highlight: {st.session_state.selected_component}</span>", unsafe_allow_html=True)
 
-    # Downloadable CSV Data
-    csv = df_sensors.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="💾 Export Node Sensor Logs (.CSV)",
-        data=csv,
-        file_name="IoT_Node_Sensor_Telemetry_Log.csv",
-        mime="text/csv"
-    )
+ctrl1, ctrl2, ctrl3 = st.columns([2, 2, 2])
+with ctrl1:
+    render_style = st.selectbox("Render Mode", ["RCC Concrete + Rebars", "Solid Architectural", "X-Ray Structural Wireframe"])
+with ctrl2:
+    bld_behavior = st.selectbox("Building Behavior / Physical Simulation", ["Static / Unloaded State", "Wind Sway Behavior (Lateral Drift)", "Seismic Oscillation (Earthquake Shift)", "Soil Settlement Dislocation", "Thermal Expansion Strain"])
+with ctrl3:
+    preset_cam = st.selectbox("Camera View", ["Perspective Center", "Front Elevation", "Side Elevation", "Isometric Roof Plan"])
 
-# =========================================================
-# 8. FOOTER
-# =========================================================
-st.write("")
-st.divider()
-st.markdown("""
-<div style="text-align:center; padding:10px; color:#64748B; font-size:13px;">
-    <b>CONSTRUCTVISION AI</b> | 3D Structural Modeling & Node Sensor Module | Developed by <b>Ritika Bhumkar & Laiba Mulani</b>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("#### ⚡ Physical Simulation Intensity & Impact Metrics")
+col_pct1, col_pct2 = st.columns([2, 3])
+
+with col_pct1:
+    behavior_pct = st.slider("Behavior Load / Deflection Magnitude Intensity (%)", min_value=0, max_value=100, value=50, step=5)
+
+with col_pct2:
+    sway_val = round((behavior_pct / 100.0) * 2.8, 2)
+    strain_pct = round((behavior_pct / 100.0) * 85.0, 1)
+    settlement_val = round((behavior_pct / 100.0) * 45.0, 1)
+    
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Lateral Sway Drift", f"{sway_val}%", delta=f"{behavior_pct}% Load Intensity")
+    m2.metric("Structural Steel Strain", f"{strain_pct}%", delta="Yield Limit")
+    m3.metric("Settlement Offset", f"{settlement_val} mm", delta="Differential Shift")
+
+cam_distance = max(building_w, building_d, total_height_m)
+cam_matrix = {
+    "Perspective Center": [building_w * 0.85, total_height_m * 0.85, cam_distance * 1.15],
+    "Front Elevation": [0, total_height_m * 0.5, cam_distance * 1.45],
+    "Side Elevation": [cam_distance * 1.45, total_height_m * 0.5, 0],
+    "Isometric Roof Plan": [0, cam_distance * 1.85, 0.01]
+}[preset_cam]
+
+is_rcc = (render_style == "RCC Concrete + Rebars")
+is_xray = (render_style == "X-Ray Structural Wireframe")
+sensors_json = json.dumps(DEMO_SENSOR_DATA)
+
+behavior_code = {
+    "Static / Unloaded State": "none",
+    "Wind Sway Behavior (Lateral Drift)": "wind",
+    "Seismic Oscillation (Earthquake Shift)": "seismic",
+    "Soil Settlement Dislocation": "settlement",
+    "Thermal Expansion Strain": "thermal"
+}[bld_behavior]
+
+# Three.js 3D Engine with FULL Steel Rebars Rendering logic
+threejs_code = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ margin: 0; overflow: hidden; background-color: #0B0E14; font-family: monospace; }}
+        #canvas-container {{ width: 100vw; height: 100vh; }}
+        #hud {{
+            position: absolute; top: 12px; left: 12px; color: #38BDF8;
+            font-size: 11px; background: rgba(15,23,42,0.92); padding: 10px 14px;
+            border: 1px solid #1E293B; border-radius: 6px; z-index: 10;
+        }}
+        #sensor-popup {{
+            position: absolute; bottom: 20px; left: 20px; color: #FFFFFF;
+            font-size: 12px; background: rgba(21, 25, 35, 0.95); padding: 14px 18px;
+            border: 2px solid #38BDF8; border-radius: 8px; z-index: 10; display: none;
+            min-width: 260px; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }}
+        .badge-normal {{ color: #4ADE80; font-weight: bold; }}
+        .badge-warning {{ color: #FACC15; font-weight: bold; }}
+        .badge-critical {{ color: #F87171; font-weight: bold; }}
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="hud">
+        <b>3D BIM MODEL: {bld_type.upper()}</b><br>
+        DIMENSIONS: {building_w}m (W) × {building_d}m (D) × {total_height_m}m (H) | FLOORS: {num_floors}<br>
+        SELECTED COMPONENT: <span style="color:#FACC15;">{selected_comp.upper()}</span><br>
+        REBAR MODE: <span style="color:#EA580C; font-weight:bold;">{'ENABLED' if show_rebars else 'DISABLED'}</span>
+    </div>
+
+    <div id="sensor-popup">
+        <div id="sc-title" style="font-weight:bold; color:#38BDF8; font-size:14px; margin-bottom:4px;"></div>
+        <div id="sc-comp" style="font-size:11px; color:#94A3B8; margin-bottom:8px;"></div>
+        <hr style="border-color:#334155; margin:6px 0;">
+        <div id="sc-val" style="font-size:13px;"></div>
+        <div id="sc-status" style="margin-top:4px;"></div>
+        <div id="sc-time" style="font-size:10px; color:#64748B; margin-top:6px;"></div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        const sensors = {sensors_json};
+        const activeComponent = "{selected_comp}";
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0B0E14);
+        scene.fog = new THREE.FogExp2(0x0B0E14, 0.005);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set({cam_matrix[0]}, {cam_matrix[1]}, {cam_matrix[2]});
+
+        const renderer = new THREE.WebGLRenderer({{ antialias: true }});
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, {total_height_m * 0.4}, 0);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(30, 50, 30);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        scene.add(new THREE.GridHelper(50, 50, 0x1E293B, 0x0F172A));
+
+        const isXray = {str(is_xray).lower()};
+        const isRCC = {str(is_rcc).lower()};
+        const drawRebars = {str(show_rebars).lower()};
+        const behavior = "{behavior_code}";
+        const intensityFactor = {behavior_pct} / 100.0;
+
+        function getMaterial(compName, baseColor = 0x64748B, opacity = 1.0) {{
+            const isHighlighted = (compName === activeComponent);
+            return new THREE.MeshStandardMaterial({{ 
+                color: isHighlighted ? 0x00E5FF : baseColor, 
+                roughness: 0.6, 
+                transparent: true, 
+                opacity: isHighlighted ? 0.95 : (isRCC ? 0.35 : (isXray ? 0.2 : opacity)),
+                wireframe: isXray,
+                emissive: isHighlighted ? 0x00B0FF : 0x000000,
+                emissiveIntensity: isHighlighted ? 0.6 : 0.0
+            }});
+        }}
+
+        // Rebar Steel Material (Bright Orange Steel)
+        const rebarMat = new THREE.MeshStandardMaterial({{ color: 0xFF5500, metalness: 0.9, roughness: 0.2 }});
+        const glassMat = new THREE.MeshPhysicalMaterial({{ color: 0x38BDF8, transmission: 0.8, transparent: true, opacity: 0.5 }});
+
+        const buildingGroup = new THREE.Group();
+        const W = {building_w};
+        const D = {building_d};
+        const H = {wall_h};
+        const T = {wall_t};
+        const floors = {num_floors};
+
+        const colXs = [-W/2 + 0.3, 0, W/2 - 0.3];
+        const colZs = [-D/2 + 0.3, 0, D/2 - 0.3];
+
+        // 1. Foundation Footings & Footing Rebars
+        const footingMat = getMaterial("Foundation Footing", 0x475569);
+        const footingGeo = new THREE.BoxGeometry(1.2, 0.4, 1.2);
+        colXs.forEach(x => {{
+            colZs.forEach(z => {{
+                const foot = new THREE.Mesh(footingGeo, footingMat);
+                foot.position.set(x, 0.2, z);
+                buildingGroup.add(foot);
+
+                // FOOTING STEEL REBAR MAT
+                if (drawRebars) {{
+                    for (let r = -0.4; r <= 0.4; r += 0.2) {{
+                        const barX = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.0), rebarMat);
+                        barX.rotation.z = Math.PI / 2;
+                        barX.position.set(x, 0.15, z + r);
+                        buildingGroup.add(barX);
+
+                        const barZ = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.0), rebarMat);
+                        barZ.rotation.x = Math.PI / 2;
+                        barZ.position.set(x + r, 0.18, z);
+                        buildingGroup.add(barZ);
+                    }}
+                }}
+            }});
+        }});
+
+        // 2. Plinth Beam
+        const plinthMat = getMaterial("Plinth Beam", 0x64748B);
+        const plinth = new THREE.Mesh(new THREE.BoxGeometry(W + 0.4, 0.4, D + 0.4), plinthMat);
+        plinth.position.set(0, 0.6, 0);
+        buildingGroup.add(plinth);
+
+        let currentY = 0.8;
+
+        // 3. Story Columns, Beams, Walls & Floor Slabs with Full Rebar Steel
+        for (let f = 0; f < floors; f++) {{
+            const colMat = getMaterial("Ground Columns", 0x334155);
+            colXs.forEach(cx => {{
+                colZs.forEach(cz => {{
+                    const colMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, H, 0.35), colMat);
+                    colMesh.position.set(cx, currentY + H/2, cz);
+                    buildingGroup.add(colMesh);
+
+                    // COLUMN LONGITUDINAL REBARS & STIRRUP TIES
+                    if (drawRebars) {{
+                        const offsets = [[-0.12, -0.12], [0.12, -0.12], [-0.12, 0.12], [0.12, 0.12]];
+                        offsets.forEach(off => {{
+                            const mainBar = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, H), rebarMat);
+                            mainBar.position.set(cx + off[0], currentY + H/2, cz + off[1]);
+                            buildingGroup.add(mainBar);
+                        }});
+
+                        for (let stY = currentY + 0.2; stY < currentY + H; stY += 0.3) {{
+                            const ring = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.012, 0.26), rebarMat);
+                            ring.position.set(cx, stY, cz);
+                            buildingGroup.add(ring);
+                        }}
+                    }}
+                }});
+            }});
+
+            // Primary Beams + Beam Rebars
+            const beamMat = getMaterial("Primary Beams", 0x475569);
+            const beamX = new THREE.Mesh(new THREE.BoxGeometry(W, 0.3, 0.3), beamMat);
+            beamX.position.set(0, currentY + H - 0.15, 0);
+            buildingGroup.add(beamX);
+
+            if (drawRebars) {{
+                for (let bY of [currentY + H - 0.25, currentY + H - 0.05]) {{
+                    for (let bZ of [-D/2 + 0.3, D/2 - 0.3]) {{
+                        const bBar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, W), rebarMat);
+                        bBar.rotation.z = Math.PI / 2;
+                        bBar.position.set(0, bY, bZ);
+                        buildingGroup.add(bBar);
+                    }}
+                }}
+            }}
+
+            // Structural Walls
+            if (!isRCC) {{
+                const wMat = getMaterial("Structural Walls", 0x94A3B8, 0.9);
+                const backWall = new THREE.Mesh(new THREE.BoxGeometry(W, H, T), wMat);
+                backWall.position.set(0, currentY + H/2, -D/2 + T/2);
+                buildingGroup.add(backWall);
+            }}
+
+            currentY += H;
+
+            // Floor Slabs + SLAB REBAR MESH GRID
+            const slabMat = getMaterial("Floor Slab", 0x64748B);
+            const slab = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, 0.25, D + 0.2), slabMat);
+            slab.position.set(0, currentY + 0.125, 0);
+            buildingGroup.add(slab);
+
+            if (drawRebars) {{
+                for (let sx = -W/2 + 0.4; sx <= W/2 - 0.4; sx += 0.6) {{
+                    const sBar = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, D), rebarMat);
+                    sBar.rotation.x = Math.PI / 2;
+                    sBar.position.set(sx, currentY + 0.125, 0);
+                    buildingGroup.add(sBar);
+                }}
+                for (let sz = -D/2 + 0.4; sz <= D/2 - 0.4; sz += 0.6) {{
+                    const sBar2 = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, W), rebarMat);
+                    sBar2.rotation.z = Math.PI / 2;
+                    sBar2.position.set(0, currentY + 0.125, sz);
+                    buildingGroup.add(sBar2);
+                }}
+            }}
+
+            currentY += 0.25;
+        }}
+
+        // Roof Slab & Parapet
+        const roofMat = getMaterial("Roof Slab", 0x475569);
+        const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(W + 0.4, 0.3, D + 0.4), roofMat);
+        roofSlab.position.set(0, currentY + 0.15, 0);
+        buildingGroup.add(roofSlab);
+
+        const parapetMat = getMaterial("Parapet Wall", 0x334155);
+        const parapetFront = new THREE.Mesh(new THREE.BoxGeometry(W + 0.4, 0.8, T), parapetMat);
+        parapetFront.position.set(0, currentY + 0.7, D/2 + 0.2 - T/2);
+        buildingGroup.add(parapetFront);
+
+        scene.add(buildingGroup);
+
+        // IoT Sensor Nodes
+        const sensorNodes = [];
+        sensors.forEach(sns => {{
+            let sColor = 0x22C55E;
+            if (sns.status === "Warning") sColor = 0xEAB308;
+            if (sns.status === "Critical") sColor = 0xEF4444;
+
+            const sphere = new THREE.Mesh(
+                new THREE.SphereGeometry(0.42, 20, 20),
+                new THREE.MeshStandardMaterial({{ color: sColor, emissive: sColor, emissiveIntensity: 0.85, roughness: 0.1 }})
+            );
+            sphere.position.set(sns.pos[0], sns.pos[1], sns.pos[2]);
+            sphere.userData = sns;
+            scene.add(sphere);
+            sensorNodes.push(sphere);
+        }});
+
+        function animate() {{
+            requestAnimationFrame(animate);
+            controls.update();
+            const time = Date.now() * 0.0025;
+
+            if (behavior === "wind") {{
+                buildingGroup.rotation.z = Math.sin(time) * (0.05 * intensityFactor);
+            }} else if (behavior === "seismic") {{
+                buildingGroup.position.x = Math.sin(time * 6) * (0.6 * intensityFactor);
+            }} else {{
+                buildingGroup.rotation.z = 0;
+                buildingGroup.position.set(0, 0, 0);
+            }}
+
+            renderer.render(scene, camera);
+        }}
+        animate();
+    </script>
+</body>
+</html>
+"""
+
+components.html(threejs_code, height=650)
+
+# ==========================================
+# 2D DRAWING & 3D MODEL LINKED PREVIEW
+# ==========================================
+st.markdown("---")
+st.markdown("### 🖼️ Synchronized Blueprint Viewer with 360° Rotated View")
+
+def generate_annotated_drawing(comp_name, rot_angle=0):
+    img = Image.new('RGB', (800, 500), color='#151923')
+    draw = ImageDraw.Draw(img)
+    
+    draw.rectangle([50, 50, 750, 450], outline='#2B354B', width=3)
+    draw.line([50, 250, 750, 250], fill='#1E293B', width=2)
+    draw.line([400, 50, 400, 450], fill='#1E293B', width=2)
+    
+    boxes = {
+        "Foundation Footing": [60, 60, 180, 180],
+        "Plinth Beam": [50, 430, 750, 450],
+        "Ground Columns": [380, 230, 420, 270],
+        "Primary Beams": [200, 240, 600, 260],
+        "Floor Slab": [210, 70, 730, 230],
+        "Structural Walls": [50, 50, 750, 70],
+        "Roof Slab": [210, 270, 730, 430],
+        "Parapet Wall": [40, 40, 760, 50]
+    }
+    
+    for c, b in boxes.items():
+        if c != comp_name:
+            draw.rectangle(b, outline='#38BDF8', width=2)
+            draw.text((b[0]+5, b[1]+5), c, fill='#64748B')
+            
+    if comp_name in boxes:
+        hb = boxes[comp_name]
+        draw.rectangle(hb, outline='#00E5FF', fill='#00E5FF33', width=4)
+        draw.text((hb[0]+5, hb[1]+5), f"SELECTED: {comp_name}", fill='#00E5FF')
+        
+    return img.rotate(-rot_angle, expand=True)
+
+col_dwg1, col_dwg2 = st.columns([1, 1])
+
+with col_dwg1:
+    st.markdown("#### 📄 Synchronized 2D Blueprint (360° Synchronized)")
+    annotated_img = generate_annotated_drawing(st.session_state.selected_component, st.session_state.drawing_rotation)
+    st.image(annotated_img, caption=f"Active Selection: {st.session_state.selected_component} (Rotation Angle: {st.session_state.drawing_rotation}°)", use_container_width=True)
+
+with col_dwg2:
+    st.markdown("#### 📍 Mapped Component Sensors")
+    comp_sensors = [s for s in DEMO_SENSOR_DATA if s["component"] == st.session_state.selected_component]
+    if comp_sensors:
+        for s in comp_sensors:
+            st.markdown(f"""
+            <div class="card-dark">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:bold; color:#38BDF8;">{s['id']} ({s['type']})</span>
+                    <span class="status-{'normal' if s['status']=='Normal' else ('warning' if s['status']=='Warning' else 'critical')}">{s['status']}</span>
+                </div>
+                <div style="font-size:18px; font-weight:bold; margin-top:8px;">{s['value']} {s['unit']}</div>
+                <div style="font-size:11px; color:#64748B; margin-top:4px;">Last Reading: {s['last_update']} | Mapped to {s['component']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info(f"No active direct sensors bound to {st.session_state.selected_component}.")
+
+# ==========================================
+# BAR BENDING SCHEDULE (BBS) & REBAR SCHEDULE
+# ==========================================
+st.markdown("---")
+st.markdown("### 📋 Dynamic Bar Bending Schedule (BBS) & Structural Steel Table")
+
+col_bbs1, col_bbs2 = st.columns([2, 1])
+
+with col_bbs1:
+    total_columns = 9 * num_floors
+    col_bar_len = round(wall_h + 0.8, 2)
+    total_col_bars = total_columns * 4
+    col_steel_weight = round(total_col_bars * col_bar_len * 1.58, 1)
+
+    total_stirrups = int(total_columns * (wall_h / 0.15))
+    stirrup_cut_len = round(2 * (0.35 + 0.35) - 8 * 0.025 + 2 * 10 * 0.008, 2)
+    stirrup_weight = round(total_stirrups * stirrup_cut_len * 0.395, 1)
+
+    slab_bars = int((building_w / 0.2) * num_floors)
+    slab_bar_len = building_d + 0.4
+    slab_steel_weight = round(slab_bars * slab_bar_len * 0.888, 1)
+
+    bbs_data = {
+        "Structural Element": ["Columns (Main Longitudinal)", "Column Stirrups (Ties)", "Beams (Top & Bottom)", "Floor Slab Mesh"],
+        "Bar Dia (mm)": [16, 8, 16, 12],
+        "Shape Code": ["Shape 00 (Straight)", "Shape 51 (Rectangular Stirrup)", "Shape 00 (Straight)", "Shape 21 (Cranked/Straight)"],
+        "No. of Members": [total_columns, total_columns, 12 * num_floors, num_floors],
+        "Bars per Member": [4, int(wall_h/0.15), 4, int(building_w/0.2)],
+        "Cutting Length (m)": [col_bar_len, stirrup_cut_len, round(building_w + 0.6, 2), round(slab_bar_len, 2)],
+        "Total Weight (kg)": [col_steel_weight, stirrup_weight, round((12*num_floors*4)*(building_w+0.6)*1.58, 1), slab_steel_weight]
+    }
+
+    df_bbs = pd.DataFrame(bbs_data)
+    st.dataframe(df_bbs, use_container_width=True)
+
+with col_bbs2:
+    total_weight = round(df_bbs["Total Weight (kg)"].sum(), 1)
+    st.metric("Total Structural Rebar Steel", f"{total_weight} kg", f"~{round(total_weight/1000, 2)} Metric Tons")
+    

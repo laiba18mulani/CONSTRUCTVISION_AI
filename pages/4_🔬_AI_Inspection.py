@@ -104,4 +104,5 @@ if image_to_process is not None:
         """, unsafe_allow_html=True)
     else:
         st.success("✅ No structural defects detected above the current threshold.")
+
         

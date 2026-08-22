@@ -1,28 +1,29 @@
 # CONSTRUCTVISION AI
+
 ## Industry-Grade Project Report
 
 ### An evidence-first civil infrastructure inspection and digital-twin prototype
 
-**Project team**  
-Ritika M. Bhumkar - ritikambhumkar@gmail.com  
-Laiba Z. Mulani - laiba.mulani.ces.34@gmail.com  
+**Project team**
+Ritika M. Bhumkar - ritikambhumkar@gmail.com
+Laiba Z. Mulani - laiba.mulani.ces.34@gmail.com
 Diploma Third Year Civil Engineering
 
-**Industry Guide**  
+**Industry Guide**
 Mr. Akash S. Chatake, M.TECH - AIML - BITS PILANI
 
-**College Guide**  
+**College Guide**
 Ms. Swati P. Maniyal, M.TECH - Structural Engineering
 
-**Company**  
-Chatake Innoworks Private Limited  
+**Company**
+Chatake Innoworks Private Limited
 www.chatakeinnoworks.com
 
-**Internship Division**  
-MindForgeAI  
+**Internship Division**
+MindForgeAI
 https://mindforgeai.co.in
 
-**Document status:** Technical delivery draft  
+**Document status:** Technical delivery draft
 **Date:** 21 August 2026
 
 ---
@@ -33,12 +34,12 @@ This is to certify that **Ritika M. Bhumkar** and **Laiba Z. Mulani**, Diploma T
 
 The work presents a Streamlit-based engineering command centre integrating image inspection, structural visualisation, telemetry concepts, preliminary mechanics, repair costing, reporting and a roadmap toward validated AI and solver services. The project has been reviewed for academic and industry documentation purposes, subject to institutional procedures and the stated technical limitations.
 
-**College Guide signature:** ______________________________  
-Ms. Swati P. Maniyal, M.TECH - Structural Engineering  
+**College Guide signature:** ______________________________
+Ms. Swati P. Maniyal, M.TECH - Structural Engineering
 Date: ____________________
 
-**Industry Guide signature:** _____________________________  
-Mr. Akash S. Chatake, M.TECH - AIML - BITS PILANI  
+**Industry Guide signature:** _____________________________
+Mr. Akash S. Chatake, M.TECH - AIML - BITS PILANI
 Date: ____________________
 
 **Institutional seal:** _________________________________
@@ -47,14 +48,14 @@ Date: ____________________
 
 ## Table of Contents
 
-1. Chapter 1: Introduction  
-2. Chapter 2: System Requirements & Feasibility  
-3. Chapter 3: System Design  
-4. Chapter 4: Modules & Mathematical Logic  
-5. Chapter 5: Implementation & Code Structuring  
-6. Chapter 6: Testing & Results  
-7. Chapter 7: Conclusion & Limitations  
-8. Bibliography  
+1. Chapter 1: Introduction
+2. Chapter 2: System Requirements & Feasibility
+3. Chapter 3: System Design
+4. Chapter 4: Modules & Mathematical Logic
+5. Chapter 5: Implementation & Code Structuring
+6. Chapter 6: Testing & Results
+7. Chapter 7: Conclusion & Limitations
+8. Bibliography
 9. Appendices
 
 ---
@@ -111,19 +112,19 @@ The project addresses this traceability problem by connecting inspection, asset 
 
 ## 2.1 Functional requirements
 
-| ID | Requirement | Current status |
-| --- | --- | --- |
-| FR-01 | Upload an inspection image | Implemented |
-| FR-02 | Estimate crack dimensions from a calibration ratio | Implemented baseline |
-| FR-03 | Display structural defects and severity | Implemented rule-based |
-| FR-04 | View parametric building geometry | Implemented |
-| FR-05 | Display sensor nodes and demo telemetry | Implemented/demo |
-| FR-06 | Run transparent screening calculations | Implemented in `modules/digital_twin/engine.py` |
-| FR-07 | Estimate repair cost and GST | Implemented in `pages/8_💰_Cost_Estimation.py` |
-| FR-08 | Maintain inspection history and export data | Implemented prototype |
-| FR-09 | Validate asset/capture/telemetry/job contracts | Implemented in `platform_core/contracts.py` |
-| FR-10 | Dispatch validated reconstruction/FEA/CFD jobs | Contract/readiness boundary only |
-| FR-11 | YOLOv8, ESG and seismic analysis | Proposed extension |
+| ID    | Requirement                                        | Current status                                   |
+| ----- | -------------------------------------------------- | ------------------------------------------------ |
+| FR-01 | Upload an inspection image                         | Implemented                                      |
+| FR-02 | Estimate crack dimensions from a calibration ratio | Implemented baseline                             |
+| FR-03 | Display structural defects and severity            | Implemented rule-based                           |
+| FR-04 | View parametric building geometry                  | Implemented                                      |
+| FR-05 | Display sensor nodes and demo telemetry            | Implemented/demo                                 |
+| FR-06 | Run transparent screening calculations             | Implemented in`modules/digital_twin/engine.py` |
+| FR-07 | Estimate repair cost and GST                       | Implemented in`pages/8_💰_Cost_Estimation.py`  |
+| FR-08 | Maintain inspection history and export data        | Implemented prototype                            |
+| FR-09 | Validate asset/capture/telemetry/job contracts     | Implemented in`platform_core/contracts.py`     |
+| FR-10 | Dispatch validated reconstruction/FEA/CFD jobs     | Contract/readiness boundary only                 |
+| FR-11 | YOLOv8, ESG and seismic analysis                   | Proposed extension                               |
 
 ## 2.2 Hardware requirements
 
@@ -259,11 +260,15 @@ The materials pages present concrete, cement, steel, brick, sand, tiles and pain
 
 The current pipeline is OpenCV-based. For contour $c$ with area $A_c$ and bounding rectangle $(w,h)$, the code keeps the contour when:
 
-$$A_c>20.$$
+$$
+A_c>20.
+$$
 
 With scale $s$ in mm/px:
 
-$$L=s\max(w,h),\qquad W=s\min(w,h).$$
+$$
+L=s\max(w,h),\qquad W=s\min(w,h).
+$$
 
 Severity is `SAFE` for $W\leq1$ mm, `WARNING` for $1<W\leq2$ mm and `CRITICAL` for $W>2$ mm. The confidence-like number is a heuristic display metric and must not be called a calibrated AI confidence.
 
@@ -271,7 +276,9 @@ Severity is `SAFE` for $W\leq1$ mm, `WARNING` for $1<W\leq2$ mm and `CRITICAL` f
 
 For a future trained detector:
 
-$$\mathcal L=\lambda_{box}\mathcal L_{CIoU}+\lambda_{cls}\mathcal L_{BCE}+\lambda_{dfl}\mathcal L_{DFL}.$$
+$$
+\mathcal L=\lambda_{box}\mathcal L_{CIoU}+\lambda_{cls}\mathcal L_{BCE}+\lambda_{dfl}\mathcal L_{DFL}.
+$$
 
 The evaluation must include class-wise precision, recall, mAP@0.5, mAP@0.5:0.95, confusion matrix, false-negative examples and calibration error.
 
@@ -287,11 +294,17 @@ The 3D page defines demo sensors for settlement, strain and vibration and associ
 
 In `pages/8_💰_Cost_Estimation.py`, each defect type maps to a rate and coverage factor. The equations are:
 
-$$Q=\frac{A}{C},\qquad C_m=A\,r,$$
+$$
+Q=\frac{A}{C},\qquad C_m=A\,r,
+$$
 
-$$C_s=A\times80\times u,\qquad C_b=C_m+C_l+C_s,$$
+$$
+C_s=A\times80\times u,\qquad C_b=C_m+C_l+C_s,
+$$
 
-$$C_{GST}=C_b\frac{g}{100},\qquad C_{total}=C_b+C_{GST}.$$
+$$
+C_{GST}=C_b\frac{g}{100},\qquad C_{total}=C_b+C_{GST}.
+$$
 
 Here $A$ is area in square feet, $C$ coverage per unit, $r$ the material rate, $u\in\{1.0,1.2,1.5\}$ the standard/high/emergency urgency multiplier, $C_l=₹5625$ fixed labour and $g$ the selected GST percentage. The editable BOQ recalculates totals from user-edited rows.
 
@@ -319,11 +332,15 @@ Thermal heat-stress screening is exposed as a settings option and temperature is
 
 For a magnitude $M$ event, an empirical radiated-energy approximation is:
 
-$$\log_{10}E_J=1.5M+4.8,$$
+$$
+\log_{10}E_J=1.5M+4.8,
+$$
 
 so:
 
-$$E_J=10^{1.5M+4.8},\qquad E_{TNT}=\frac{E_J}{4.184\times10^9}\;\text{tonnes TNT}.$$
+$$
+E_J=10^{1.5M+4.8},\qquad E_{TNT}=\frac{E_J}{4.184\times10^9}\;\text{tonnes TNT}.
+$$
 
 This conversion is for scenario communication; structural demand still requires ground motion, site conditions, model properties and code procedures.
 
@@ -331,7 +348,9 @@ This conversion is for scenario communication; structural demand still requires 
 
 For worker position $\mathbf p=(x_p,y_p,z_p)$ and hazard or equipment position $\mathbf h=(x_h,y_h,z_h)$:
 
-$$d(\mathbf p,\mathbf h)=\sqrt{(x_p-x_h)^2+(y_p-y_h)^2+(z_p-z_h)^2}.$$
+$$
+d(\mathbf p,\mathbf h)=\sqrt{(x_p-x_h)^2+(y_p-y_h)^2+(z_p-z_h)^2}.
+$$
 
 An alert can be issued if $d<d_{safe}$ for a defined dwell time, with sensor uncertainty and zone geometry included in a production implementation.
 
@@ -376,15 +395,15 @@ Recommended controls include OIDC/RBAC, TLS, secrets management, schema validati
 
 ## 6.1 Test strategy
 
-| Test layer | Test objective | Evidence to attach |
-| --- | --- | --- |
-| Unit | Validate equations and boundary thresholds | Automated test output |
-| Image pipeline | Check contour filtering and scale conversion | Annotated image set |
-| UI | Confirm upload, controls, export and responsive layout | Screenshots/video |
-| Contract | Reject invalid URIs, units and telemetry fields | API validation log |
-| Integration | Check worker readiness states | Worker status log |
-| Performance | Measure inference, render, query and export latency | Benchmark table |
-| Engineering | Compare screening/solver outputs with references | Independent review |
+| Test layer     | Test objective                                         | Evidence to attach    |
+| -------------- | ------------------------------------------------------ | --------------------- |
+| Unit           | Validate equations and boundary thresholds             | Automated test output |
+| Image pipeline | Check contour filtering and scale conversion           | Annotated image set   |
+| UI             | Confirm upload, controls, export and responsive layout | Screenshots/video     |
+| Contract       | Reject invalid URIs, units and telemetry fields        | API validation log    |
+| Integration    | Check worker readiness states                          | Worker status log     |
+| Performance    | Measure inference, render, query and export latency    | Benchmark table       |
+| Engineering    | Compare screening/solver outputs with references       | Independent review    |
 
 ## 6.2 Current results
 
@@ -448,10 +467,10 @@ The next release should prioritise data governance and repeatable validation: la
 
 # Appendix A: Branding and contact metadata
 
-**Project team:** Ritika M. Bhumkar (ritikambhumkar@gmail.com); Laiba Z. Mulani (laiba.mulani.ces.34@gmail.com)  
-**Industry Guide:** Mr. Akash S. Chatake, M.TECH - AIML - BITS PILANI  
-**College Guide:** Ms. Swati P. Maniyal, M.TECH - Structural Engineering  
-**Chatake Innoworks Private Limited:** www.chatakeinnoworks.com  
+**Project team:** Ritika M. Bhumkar (ritikambhumkar@gmail.com); Laiba Z. Mulani (laiba.mulani.ces.34@gmail.com)
+**Industry Guide:** Mr. Akash S. Chatake, M.TECH - AIML - BITS PILANI
+**College Guide:** Ms. Swati P. Maniyal, M.TECH - Structural Engineering
+**Chatake Innoworks Private Limited:** www.chatakeinnoworks.com
 **MindForgeAI:** https://mindforgeai.co.in
 
 # Appendix B: Local execution

@@ -18,31 +18,15 @@ st.set_page_config(
 )
 
 # =====================================================
-# CUSTOM DARK THEME CSS
+# CUSTOM DARK GLASS UI THEME CSS
 # =====================================================
 st.markdown("""
 <style>
-    /* Global Reset & Dark Theme */
+    /* Glowing Dark Background matching Image 1 */
     .stApp {
-        background-color: #0B0F17;
+        background: radial-gradient(circle at 50% -20%, #172437 0%, #080D14 60%, #03060A 100%) !important;
         color: #E2E8F0;
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-    }
-
-    /* Blueprint Dark Grid Overlay */
-    .stApp::before {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image:
-            linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
-        background-size: 35px 35px;
-        pointer-events: none;
-        z-index: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     /* Hide Streamlit Headers */
@@ -50,85 +34,105 @@ st.markdown("""
         visibility: hidden;
     }
 
-    /* Sidebar Styling */
+    /* Dark Sidebar with Subtle Border */
     section[data-testid="stSidebar"] {
-        background-color: #111827 !important;
-        border-right: 1px solid #1E293B;
+        background-color: #0B0F17 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
-    /* Card Layouts */
-    .dark-card {
-        background: #1E293B;
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    /* Glassmorphism Dark Cards & Containers */
+    .dark-card, .metric-container, .hero-dark {
+        background: rgba(13, 20, 32, 0.75) !important;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 18px !important;
+        padding: 22px !important;
+        margin-bottom: 18px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         transition: all 0.3s ease;
     }
-    .dark-card:hover {
-        border-color: #38BDF8;
-        box-shadow: 0 6px 25px rgba(56, 189, 248, 0.15);
+    
+    .dark-card:hover, .metric-container:hover {
+        border-color: rgba(56, 189, 248, 0.4) !important;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
         transform: translateY(-2px);
     }
 
-    /* Hero Section */
-    .hero-dark {
-        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-        border: 1px solid #334155;
-        border-left: 6px solid #38BDF8;
-        border-radius: 16px;
-        padding: 30px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    /* Top Navigation Pills */
+    .pill-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .pill-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 20px;
+        border-radius: 30px;
+        color: #94A3B8;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .pill-item.active {
+        background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+        color: #FFFFFF;
+        border: none;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
     }
 
-    /* Header Accents */
-    h1, h2, h3 {
-        color: #F8FAFC !important;
-        font-weight: 700;
+    /* Typography & Neon Accents */
+    h1, h2, h3, h4 {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
     }
     .accent-text {
-        color: #38BDF8;
+        color: #38BDF8 !important;
+        text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
     }
     .accent-orange {
-        color: #F97316;
+        color: #F97316 !important;
+        text-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
     }
 
-    /* Metrics Visuals */
-    .metric-container {
-        background: #1E293B;
-        border: 1px solid #334155;
-        border-radius: 10px;
-        padding: 15px;
-        text-align: center;
-    }
+    /* KPI Metric Styling */
     .metric-value {
-        font-size: 32px;
-        font-weight: 800;
-        color: #38BDF8;
+        font-size: 34px !important;
+        font-weight: 800 !important;
+        color: #38BDF8 !important;
+        text-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
     }
     .metric-label {
-        font-size: 13px;
-        color: #94A3B8;
+        font-size: 12px !important;
+        color: #94A3B8 !important;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        margin-top: 4px;
     }
 
-    /* Custom Streamlit Buttons */
+    /* Glowing Action Buttons */
     .stButton>button {
-        background: linear-gradient(90deg, #0284C7 0%, #0369A1 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        padding: 0.6rem 1rem;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 25px !important;
+        font-weight: 600 !important;
+        padding: 0.6rem 1.4rem !important;
+        box-shadow: 0 0 15px rgba(2, 132, 199, 0.4) !important;
+        transition: all 0.3s ease !important;
     }
     .stButton>button:hover {
-        background: linear-gradient(90deg, #EA580C 0%, #C2410C 100%);
-        color: white;
-        box-shadow: 0 0 15px rgba(234, 88, 12, 0.4);
+        background: linear-gradient(135deg, #F97316 0%, #EA580C 100%) !important;
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.5) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Input & Dropdown Styling */
+    div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
+        background-color: rgba(15, 23, 42, 0.8) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -174,13 +178,24 @@ greeting = "Good Morning" if hour < 12 else ("Good Afternoon" if hour < 17 else 
 # MODULE 1: OVERVIEW DASHBOARD
 # =====================================================
 if menu == "🏠 Overview Dashboard":
+    
+    # Top Bar Pills (Matching 1st Image Navigation Style)
+    st.markdown("""
+    <div class="pill-bar">
+        <span class="pill-item active">Overview</span>
+        <span class="pill-item">Inspection</span>
+        <span class="pill-item">Materials</span>
+        <span class="pill-item">Analytics</span>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.markdown(f"""
     <div class="hero-dark">
         <h1>🏗️ CONSTRUCTVISION <span class="accent-text">AI</span></h1>
         <p style="font-size: 1.1rem; color: #94A3B8;">
             <b>{greeting}, Engineer.</b> Welcome to the next-generation residential construction inspection workspace.
         </p>
-        <hr style="border-color: #334155;">
+        <hr style="border-color: rgba(255, 255, 255, 0.1);">
         <p style="color: #CBD5E1;">
             Bridging <b>Civil Engineering</b> with <b>Computer Vision</b> to detect concrete structural defects, analyze load-bearing material safety, and deliver automated structural audit reports.
         </p>
@@ -201,14 +216,14 @@ if menu == "🏠 Overview Dashboard":
     with kpi2:
         st.markdown("""
         <div class="metric-container">
-            <div class="metric-value" style="color:#F97316;">1,420+</div>
+            <div class="metric-value" style="color:#F97316 !important;">1,420+</div>
             <div class="metric-label">Scanned Defects</div>
         </div>
         """, unsafe_allow_html=True)
     with kpi3:
         st.markdown("""
         <div class="metric-container">
-            <div class="metric-value" style="color:#10B981;">18 MS</div>
+            <div class="metric-value" style="color:#10B981 !important;">18 MS</div>
             <div class="metric-label">Inference Speed</div>
         </div>
         """, unsafe_allow_html=True)
@@ -244,7 +259,7 @@ if menu == "🏠 Overview Dashboard":
             """, unsafe_allow_html=True)
 
 # =====================================================
-# MODULE 2: AI DEFECT INSPECTION (Interactive Simulator)
+# MODULE 2: AI DEFECT INSPECTION
 # =====================================================
 elif menu == "📷 AI Defect Inspection":
     st.markdown("## 📷 Computer Vision Defect Detection")
@@ -270,12 +285,10 @@ elif menu == "📷 AI Defect Inspection":
         st.divider()
         if st.button("🚀 Run AI Structural Analysis"):
             with st.spinner("Executing Computer Vision Pipeline..."):
-                # Processing Image with simulated Bounding Boxes
                 img_draw = image.copy()
                 draw = ImageDraw.Draw(img_draw)
                 w, h = img_draw.size
 
-                # Draw mock detected bounding box
                 box = [int(w * 0.25), int(h * 0.3), int(w * 0.75), int(h * 0.7)]
                 draw.rectangle(box, outline="#F97316", width=4)
                 draw.text((box[0] + 5, box[1] + 5), f"{model_type}: 94.2% Conf", fill="#F97316")
@@ -333,7 +346,7 @@ elif menu == "🧱 Material Knowledge Base":
         calc_btn = st.button("Calculate Raw Materials")
 
     if calc_btn:
-        dry_vol = target_volume * 1.54  # Dry volume conversion factor
+        dry_vol = target_volume * 1.54
         if "M20" in mix_grade:
             cement_bags = round((1 / 5.5) * dry_vol * 28.8, 1)
             sand_m3 = round((1.5 / 5.5) * dry_vol, 2)
@@ -358,7 +371,6 @@ elif menu == "🧱 Material Knowledge Base":
 elif menu == "📊 Analytics & Risk":
     st.markdown("## 📊 Defect Analytics & Structural Risk Profile")
 
-    # Sample Defect Data
     df_defects = pd.DataFrame({
         "Component": ["Columns", "Beams", "Slabs", "Foundation", "Brick Walls"],
         "Cracks": [45, 30, 65, 12, 80],
@@ -375,7 +387,7 @@ elif menu == "📊 Analytics & Risk":
             template="plotly_dark",
             color_discrete_sequence=["#38BDF8", "#F97316", "#10B981"]
         )
-        fig1.update_layout(paper_bgcolor="#1E293B", plot_bgcolor="#1E293B")
+        fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig1, use_container_width=True)
 
     with c_chart2:
@@ -387,7 +399,7 @@ elif menu == "📊 Analytics & Risk":
             hole=0.4,
             color_discrete_sequence=["#10B981", "#FBBF24", "#EF4444"]
         )
-        fig2.update_layout(paper_bgcolor="#1E293B", plot_bgcolor="#1E293B")
+        fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig2, use_container_width=True)
 
 # =====================================================

@@ -147,7 +147,7 @@ Date: <strong><em>_</em></strong><strong><em>_</em></strong>______</p>
 <tr>
 <td>FR-07</td>
 <td>Estimate repair cost and GST</td>
-<td>Implemented in <code>pages/8_💰_Cost_Estimation.py</code></td>
+<td>Implemented in <code>pages/9_💰_Cost_Estimation.py</code></td>
 </tr>
 <tr>
 <td>FR-08</td>
@@ -265,7 +265,7 @@ triage  viewer   contracts  workflows
 <h2>4.2 Module 2 - Tutorial and virtual practical learning</h2>
 <p>The tutorial explains manual versus AI-assisted workflows, structural materials, safety practice, damage types and reporting. The virtual practical module presents construction activities, material requirements and safety protocols. These modules support training and explainability.</p>
 <h2>4.3 Module 3 - Structural digital twin</h2>
-<p><code>pages/3_🏗️_3D_Building.py</code> accepts plans and site photos, estimates plan extents from contours, exposes building width/depth/floor/story parameters and renders an interactive Three.js scene. It includes render modes, component highlighting, camera presets, rebar visibility and labelled behaviours: static, wind, seismic and settlement. The seismic label is currently a visual scenario selector, not a validated seismic solver.</p>
+<p><code>pages/7_🏗️_3D_Building.py</code> accepts plans and site photos, estimates plan extents from contours, exposes building width/depth/floor/story parameters and renders an interactive Three.js scene. It includes render modes, component highlighting, camera presets, rebar visibility and labelled behaviours: static, wind, seismic and settlement. The seismic label is currently a visual scenario selector, not a validated seismic solver.</p>
 <h2>4.4 Module 4 - Materials library</h2>
 <p>The materials pages present concrete, cement, steel, brick, sand, tiles and paint information using local assets. This gives inspection results practical context for repair planning.</p>
 <h2>4.5 Module 5 - AI inspection and crack triage</h2>
@@ -283,7 +283,7 @@ triage  viewer   contracts  workflows
 <h2>4.7 Module 7 - 3D/IoT sensor nodes</h2>
 <p>The 3D page defines demo sensors for settlement, strain and vibration and associates them with structural components and coordinates. <code>modules/digital_twin/engine.py</code> also generates 168 hours of synthetic telemetry with a fixed seed. The platform contracts permit strain, tilt, acceleration, displacement, temperature, humidity, water level and wind speed, plus <code>GOOD</code>, <code>SUSPECT</code> and <code>BAD</code> quality values.</p>
 <h2>4.8 Module 8 - Cost estimation</h2>
-<p>In <code>pages/8_💰_Cost_Estimation.py</code>, each defect type maps to a rate and coverage factor. The equations are:</p>
+<p>In <code>pages/9_💰_Cost_Estimation.py</code>, each defect type maps to a rate and coverage factor. The equations are:</p>
 <p>$$Q=\frac{A}{C},\qquad C_m=A\,r,$$</p>
 <p>$$C_s=A\times80\times u,\qquad C_b=C_m+C_l+C_s,$$</p>
 <p>$$C_{GST}=C_b\frac{g}{100},\qquad C_{total}=C_b+C_{GST}.$$</p>
@@ -437,4 +437,42 @@ documentation_workspace/       This publication package
 <h1>Appendix B: Local execution</h1>
 <pre><code class="language-powershell">.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --server.port 8501
 </code></pre>
-<p>The active prototype entry point is <code>app.py</code>; the repository also contains legacy/evolving modules under <code>pages/</code>.</p></body></html>
+<p>The active prototype entry point is <code>app.py</code>; the repository also contains legacy/evolving modules under <code>pages/</code>.</p>
+<hr />
+<h1>Appendix C: Expanded implementation analysis</h1>
+<h2>C.1 Current repository map</h2>
+<p>The repository is an evidence-first prototype that is gradually moving toward an API-and-worker architecture. The root command centre and the specialised prototype pages should be treated as complementary user-interface layers until they are consolidated into a tested release.</p>
+<table><thead><tr><th>Directory or file</th><th>Current responsibility</th><th>Documentation implication</th></tr></thead><tbody>
+<tr><td><code>main.py</code></td><td>Delegates to the root Streamlit application.</td><td>It can be used as the standard local entry point.</td></tr>
+<tr><td><code>app.py</code></td><td>Operational views for portfolio, twin, capture, health, telemetry and integration.</td><td>It is the clearest end-to-end command-centre demonstration.</td></tr>
+<tr><td><code>pages/</code></td><td>Specialised pages for training, inspection, 3D, IoT, costing, history, reports and settings.</td><td>Each page remains a prototype module requiring individual test evidence.</td></tr>
+<tr><td><code>modules/digital_twin/engine.py</code></td><td>Geometry, synthetic telemetry and transparent first-pass screening.</td><td>The outputs are educational screening indicators, not design verification.</td></tr>
+<tr><td><code>platform_core/contracts.py</code></td><td>Typed asset, capture, telemetry and analysis-request records.</td><td>These contracts are the basis for future data validation and service integration.</td></tr>
+<tr><td><code>workers/dispatcher.py</code></td><td>Checks whether COLMAP, OpenSees and OpenFOAM executables are available.</td><td><code>BLOCKED</code> means no analysis has run and no result may be inferred.</td></tr>
+</tbody></table>
+<h2>C.2 User workflow and decision gates</h2>
+<pre>Capture evidence -&gt; validate metadata and calibration -&gt; inspect/triage
+       -&gt; relate to component and spatial context -&gt; review telemetry
+       -&gt; preliminary screening -&gt; engineer review -&gt; repair/cost/report
+       -&gt; optional solver request -&gt; READY/BLOCKED -&gt; versioned result</pre>
+<p>The workflow must stop or escalate when capture metadata is incomplete, calibration is unavailable for a dimensional claim, telemetry is low quality, a screening result requires review, or an external worker is blocked. These are accountable engineering gates, not interface errors to hide.</p>
+<h2>C.3 Verification plan</h2>
+<table><thead><tr><th>Test</th><th>Acceptance condition</th><th>Evidence retained</th></tr></thead><tbody>
+<tr><td>Contract validation</td><td>Invalid image URI, sensor ID, metric and quality values are rejected.</td><td>Automated test log and invalid-input examples.</td></tr>
+<tr><td>Screening arithmetic</td><td>Hand calculations match the implementation for normal and boundary inputs.</td><td>Reviewed calculation sheet.</td></tr>
+<tr><td>Worker readiness</td><td>Every supported job returns solver name, executable, state and clear message.</td><td>Captured readiness output.</td></tr>
+<tr><td>Image triage</td><td>Labelled images record true/false positives, false negatives and measurement error.</td><td>Dataset manifest, annotations and review notes.</td></tr>
+<tr><td>End-to-end report</td><td>An inspection remains linked from capture through exported report.</td><td>Versioned report and source manifest.</td></tr>
+</tbody></table>
+<h2>C.4 Delivery roadmap</h2>
+<ol><li><strong>Stabilise:</strong> consolidate navigation, correct references and test contracts and screening arithmetic.</li><li><strong>Evidence layer:</strong> add persistent IDs, object storage, metadata, audit records and reviewer workflows.</li><li><strong>Validate field intelligence:</strong> collect a consented labelled dataset, calibrate capture and report errors.</li><li><strong>Connect engineering services:</strong> use durable queues and retain versioned solver inputs, logs and artefacts.</li><li><strong>Pilot responsibly:</strong> operate with qualified engineer review, escalation rules and independent assessment.</li></ol>
+<h1>Appendix D: Updated page-reference register</h1>
+<table><thead><tr><th>Functional area</th><th>Actual primary page/file</th></tr></thead><tbody>
+<tr><td>AI inspection</td><td><code>pages/5_🔬_AI_Inspection.py</code></td></tr>
+<tr><td>Damage analysis</td><td><code>pages/6_📊_Damage_Analysis.py</code></td></tr>
+<tr><td>3D building</td><td><code>pages/7_🏗️_3D_Building.py</code></td></tr>
+<tr><td>IoT telemetry</td><td><code>pages/8_📡_IoT.py</code></td></tr>
+<tr><td>Cost estimation</td><td><code>pages/9_💰_Cost_Estimation.py</code></td></tr>
+<tr><td>Reports</td><td><code>pages/12_📄_Reports.py</code></td></tr>
+</tbody></table>
+</body></html>

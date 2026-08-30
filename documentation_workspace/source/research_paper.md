@@ -47,32 +47,34 @@ The research gap is therefore not the absence of individual algorithms. It is th
 
 ### 3.1 Current inspection pipeline
 
-`pages/6_🔬_AI_Inspection.py` accepts a user image or synthesises a sample crack image. The current pipeline is:
+`pages/5_🔬_AI_Inspection.py` accepts a camera frame, uploaded field image, or synthetic demonstration target. The active rule-based pipeline is:
 
-1. Convert RGB pixels to grayscale.
-2. Apply Gaussian blur with a $5\times5$ kernel.
-3. Apply Canny edge detection with thresholds 50 and 150.
-4. Extract external contours.
-5. Remove contours with area $A_c\leq20$ pixels.
-6. Compute a bounding rectangle $(x,y,w,h)$.
-7. Convert dimensions using a user-supplied scale $s$ in mm/px:
+1. Convert the RGB input to grayscale and HSV colour spaces.
+2. Optionally suppress probable sky/glare and vegetation regions with HSV masks.
+3. Apply a Gaussian blur with a $5\times5$ kernel.
+4. Apply Canny edge detection with the user-selected sensitivity $k$ and upper threshold $2k$; the default is $k=45$.
+5. Join nearby edge fragments with a $3\times3$ morphological closing operation.
+6. Extract external contours and discard a contour whose closed perimeter $P$ is below the user-selected minimum threshold $P_{min}$; the default is 30 px.
+7. Retain elongated or sparse contours using aspect ratio and extent, then estimate length, width and area with the user-supplied scale $s$ in mm/px:
 
-$$L_{mm}=s\max(w,h), \qquad W_{mm}=s\min(w,h).$$
+$$L_{px}=P/2, \qquad W_{px}=A_c/L_{px},$$
 
-8. Assign severity using the implemented rule:
+$$L_{mm}=sL_{px}, \qquad W_{mm}=\operatorname{clip}(sW_{px},0.08,6.50).$$
+
+8. Assign the implemented interface severity:
 
 $$C(W_{mm})=
 \begin{cases}
-\text{CRITICAL},&W_{mm}>2.0\\
-\text{WARNING},&1.0<W_{mm}\leq2.0\\
-\text{SAFE},&W_{mm}\leq1.0.
+\text{CRITICAL (Grade III)},&W_{mm}>0.30\\
+\text{MODERATE (Grade II)},&0.10\leq W_{mm}\leq0.30\\
+\text{NOMINAL (Grade I)},&W_{mm}<0.10.
 \end{cases}$$
 
-The page displays a confidence-like value $\min(0.95,0.60+A_c/1000)$, but this is a heuristic display value, not a calibrated probability. It must not be reported as model confidence in an empirical paper.
+This is an OpenCV rule-based triage workflow, not YOLO inference or calibrated defect probability. Any confidence figures shown elsewhere in the prototype are interface/demo values unless linked to a trained model, an evaluation set and a calibration analysis.
 
 ### 3.2 Proposed YOLOv8 extension
 
-The repository contains a settings label for YOLOv8-X/N and a `models/yolov11.pt` file, but no YOLO inference call, dataset loader or trained YOLOv8 checkpoint is wired into the active inspection page. The proposed production path is an anchor-free, decoupled-head detector with a backbone-neck feature pyramid and defect classes such as crack, spalling, exposed reinforcement, honeycombing, leakage and corrosion.
+The repository contains settings labels for YOLOv8-X/N and a zero-byte placeholder named `models/yolov11.pt`; it does not contain a usable model checkpoint, YOLO inference call or dataset loader wired into the active inspection page. The proposed production path is an anchor-free, decoupled-head detector with a backbone-neck feature pyramid and defect classes such as crack, spalling, exposed reinforcement, honeycombing, leakage and corrosion.
 
 For a predicted box $\hat b=(\hat x,\hat y,\hat w,\hat h)$ and ground-truth box $b$, a composite objective can be written as:
 
@@ -166,29 +168,29 @@ with uncertainty intervals $[\hat E_{t+h}^{L},\hat E_{t+h}^{U}]$. The system sho
 
 ## 4. Implementation and system architecture
 
-The platform is a Streamlit multi-page experience with the following 13 functional modules:
+The platform has two overlapping Streamlit interface layers: a newer root command centre in `app.py` and 13 specialised prototype pages in `pages/`. The specialised pages are:
 
 1. Home/command centre and project portfolio.
 2. Tutorial and training workflow.
-3. Structural digital twin and 3D building viewer.
-4. Materials knowledge library.
-5. Virtual practical laboratory.
-6. AI inspection and crack triage.
-7. Damage analysis and repair protocol.
-8. Cost estimation and bill generation.
-9. Report generation and audit history.
-10. IoT/sensor-node visualisation.
+3. Virtual practical laboratory.
+4. GPS location and drone-flight GIS.
+5. AI inspection and crack triage.
+6. Damage analysis and repair protocol.
+7. Structural digital-twin and 3D building viewer.
+8. IoT/sensor-node visualisation.
+9. Cost estimation and bill generation.
+10. Materials knowledge library.
 11. Historical inspection records.
-12. Settings, calibration and governance.
-13. Platform-core contracts and future worker orchestration.
+12. Report generation.
+13. Settings, calibration and governance.
 
-The newer root `app.py` also exposes Portfolio, Command center, Twin studio, Capture & reconstruction, Asset health and Integration views. `platform_core/contracts.py` defines typed asset, capture, telemetry and analysis-job models. `workers/dispatcher.py` checks whether COLMAP, OpenSees and OpenFOAM executables are installed and returns `READY` or `BLOCKED`; this is a valuable safety property because unavailable analyses are not fabricated.
+The root `app.py` exposes Portfolio, Command center, Twin studio, Capture & reconstruction, Asset health, IoT Telemetry & CCTV, and Integration views. `platform_core/contracts.py` defines typed asset, capture, telemetry and analysis-job models, while `platform_core/store.py` provides a local SQLite reference store for assets, captures, telemetry and analysis jobs. `workers/dispatcher.py` checks whether COLMAP, OpenSees and OpenFOAM executables are installed and returns `READY` or `BLOCKED`; this is a valuable safety property because unavailable analyses are not fabricated.
 
 ## 5. Results and discussion
 
 ### 5.1 Verified implementation results
 
-The code supports a runnable interface, deterministic demo telemetry, parametric frame geometry, transparent screening formulas, image contour annotation, repair-cost calculation, report-history views and typed contracts. The source also states that reconstruction, FEA, CFD and production IoT are future integrations.
+The code supports a runnable interface, deterministic demo telemetry, parametric frame geometry, transparent screening formulas, rule-based image contour annotation, repair-cost calculation, report-history views, typed contracts and a local SQLite reference store. Reconstruction, FEA, CFD and production-grade IoT integration remain future integrations.
 
 ### 5.2 Simulated demonstration metrics
 
@@ -239,3 +241,34 @@ ConstructVision AI demonstrates how an infrastructure-inspection interface can c
 [17] A. Chopra, *Dynamics of Structures: Theory and Applications to Earthquake Engineering*, 5th ed. Pearson, 2017.
 
 [18] M. P. Groover, *Automation, Production Systems, and Computer-Integrated Manufacturing*, 4th ed. Pearson, 2015.
+
+## Appendix A. Reproducibility and validity protocol
+
+This paper describes a prototype implementation and a validation agenda. A future empirical version must publish a reproducibility package containing: the source revision; dependency lockfile; operating-system and hardware record; configuration values; de-identified dataset manifest; annotation guide; train/validation/test split rule; random seeds; trained-model hash; evaluation script; and complete tables for per-class errors. Results from synthetic telemetry must be labelled synthetic and must not be mixed with field measurements in aggregate metrics.
+
+For image measurement, the capture protocol should specify camera-to-surface distance, viewing angle, lighting condition, scale target dimensions, image resolution and surface type. The reference measurement method should be stated before testing. Measurement performance should report mean absolute error, root-mean-square error, bias and a confidence interval by crack-width band.
+
+For a structural solver workflow, retain the geometry/model revision, material definitions, boundary conditions, load cases, ground-motion record where applicable, solver version, time step, convergence settings, output files and engineer review. A visual animation is excluded from structural validation unless it is generated from the stored solver result.
+
+## Appendix B. Claim taxonomy for publications and demonstrations
+
+| Status | Meaning | Example wording |
+| --- | --- | --- |
+| Implemented | Executable behaviour directly evidenced in this checkout. | “The prototype generates a parametric frame and preliminary screening indicator.” |
+| Demonstration | Synthetic data or illustrative workflow used to explain the interface. | “The dashboard displays deterministic synthetic telemetry for demonstration.” |
+| Readiness boundary | A request is validated or a dependency is checked, but no external computation has been completed. | “The dispatcher reports whether an OpenSees worker is available.” |
+| Proposed | Architecture, equation or requirement not implemented and tested in this checkout. | “A future detector may be evaluated using mAP and calibration error.” |
+| Validated | A result independently supported by a documented method and dataset. | Use only after the reproducibility package and appropriate review are available. |
+
+This taxonomy provides a simple safeguard for posters, oral examinations, reports and product demonstrations. It prevents target metrics from appearing to be results and distinguishes a digital representation from an engineering-certified model.
+
+## Appendix C. Deployment research questions
+
+1. Does evidence linkage reduce the time required for an engineer to locate the source and assumptions behind an inspection finding?
+2. Under which surface, lighting and capture conditions does calibrated image measurement remain within an agreed error tolerance?
+3. Does a model trained on one project, material or camera generalise to another without unacceptable false negatives?
+4. Which telemetry quality rules minimise false alerts while preserving timely escalation of abnormal readings?
+5. Can reviewers consistently distinguish a preliminary screening result from a code-based structural assessment after using the interface?
+6. What governance, privacy and retention controls are required for a real owner/operator deployment?
+
+Answering these questions with a representative field study would transform the present architectural contribution into an evidence-backed deployment study.

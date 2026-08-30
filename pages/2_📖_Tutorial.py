@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -203,7 +201,7 @@ if guide_section == "🏠 Platform Overview":
         """, unsafe_allow_html=True)
 
 # ==========================================================
-# SECTION 2: MANUAL VS. AI INSPECTION (NEW SECTION)
+# SECTION 2: MANUAL VS. AI INSPECTION
 # ==========================================================
 elif guide_section == "🔄 Manual vs. AI Inspection":
     st.markdown("## 🔄 Traditional Manual Inspection vs. AI Digital Workflow")
@@ -211,7 +209,6 @@ elif guide_section == "🔄 Manual vs. AI Inspection":
 
     st.write("")
 
-    # Visual Workflow Timeline Simulation (Plotly Chart)
     st.markdown("### ⏱️ Time & Labor Allocation Breakdown")
     
     tasks_df = pd.DataFrame([
@@ -270,7 +267,7 @@ elif guide_section == "🔄 Manual vs. AI Inspection":
                 <li><b>Multi-Sensor Image Capture:</b> High-res photo uploaded directly via smartphone, drone feed, or fixed CCTV camera.</li>
                 <li><b>Sub-Pixel AI Computer Vision:</b> YOLO neural network identifies micro-cracks (<0.1mm), spalling, rebar exposure, and honeycombing instantly.</li>
                 <li><b>Automated Code Compliance:</b> Software maps crack widths against standard civil codes (IS 456 / ACI 318) to assign hazard levels (Low, Med, Critical).</li>
-                <li><b>3D Twin Spatial Integration:</b> Defect coordinates are mapped onto a interactive 3D building frame with IoT strain gauge overlays.</li>
+                <li><b>3D Twin Spatial Integration:</b> Defect coordinates are mapped onto an interactive 3D building frame with IoT strain gauge overlays.</li>
                 <li><b>1-Click Audit & Costing:</b> Instant cost estimation for epoxy grouting/jacketing and downloadable PDF/text audit reports.</li>
             </ol>
         </div>
@@ -406,7 +403,6 @@ elif guide_section == "⚡ AI vs. Manual ROI Calculator":
         engineer_rate = st.slider("Engineer Hourly Rate ($/hr or local currency):", 20, 200, 65)
         ai_speedup = st.slider("Estimated AI Inspection Time Reduction (%):", 40, 90, 75)
 
-    # Calculations
     manual_total_hours = num_sites * manual_hours
     manual_cost = manual_total_hours * engineer_rate
 
@@ -446,7 +442,6 @@ elif guide_section == "⚡ AI vs. Manual ROI Calculator":
         </div>
         """, unsafe_allow_html=True)
 
-    # Plotly Comparison Chart
     df_calc = pd.DataFrame({
         "Method": ["Traditional Manual Audit", "CONSTRUCTVISION AI"],
         "Hours Spent": [manual_total_hours, ai_total_hours],
@@ -464,7 +459,7 @@ elif guide_section == "⚡ AI vs. Manual ROI Calculator":
     st.plotly_chart(fig, use_container_width=True)
 
 # ==========================================================
-# SECTION 6: ADVANTAGES & DISADVANTAGES (NEW SECTION)
+# SECTION 6: ADVANTAGES & DISADVANTAGES
 # ==========================================================
 elif guide_section == "⚖️ Advantages & Disadvantages":
     st.markdown("## ⚖️ Engineering Trade-Off Analysis: AI vs. Manual")

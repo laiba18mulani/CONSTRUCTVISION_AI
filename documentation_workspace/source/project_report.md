@@ -120,7 +120,7 @@ The project addresses this traceability problem by connecting inspection, asset 
 | FR-04 | View parametric building geometry                  | Implemented                                      |
 | FR-05 | Display sensor nodes and demo telemetry            | Implemented/demo                                 |
 | FR-06 | Run transparent screening calculations             | Implemented in`modules/digital_twin/engine.py` |
-| FR-07 | Estimate repair cost and GST                       | Implemented in`pages/8_💰_Cost_Estimation.py`  |
+| FR-07 | Estimate repair cost and GST                       | Implemented in `pages/9_💰_Cost_Estimation.py` |
 | FR-08 | Maintain inspection history and export data        | Implemented prototype                            |
 | FR-09 | Validate asset/capture/telemetry/job contracts     | Implemented in`platform_core/contracts.py`     |
 | FR-10 | Dispatch validated reconstruction/FEA/CFD jobs     | Contract/readiness boundary only                 |
@@ -250,7 +250,7 @@ The tutorial explains manual versus AI-assisted workflows, structural materials,
 
 ## 4.3 Module 3 - Structural digital twin
 
-`pages/3_🏗️_3D_Building.py` accepts plans and site photos, estimates plan extents from contours, exposes building width/depth/floor/story parameters and renders an interactive Three.js scene. It includes render modes, component highlighting, camera presets, rebar visibility and labelled behaviours: static, wind, seismic and settlement. The seismic label is currently a visual scenario selector, not a validated seismic solver.
+`pages/7_🏗️_3D_Building.py` accepts plans and site photos, estimates plan extents from contours, exposes building width/depth/floor/story parameters and renders an interactive Three.js scene. It includes render modes, component highlighting, camera presets, rebar visibility and labelled behaviours: static, wind, seismic and settlement. The seismic label is currently a visual scenario selector, not a validated seismic solver.
 
 ## 4.4 Module 4 - Materials library
 
@@ -292,7 +292,7 @@ The 3D page defines demo sensors for settlement, strain and vibration and associ
 
 ## 4.8 Module 8 - Cost estimation
 
-In `pages/8_💰_Cost_Estimation.py`, each defect type maps to a rate and coverage factor. The equations are:
+In `pages/9_💰_Cost_Estimation.py`, each defect type maps to a rate and coverage factor. The equations are:
 
 $$
 Q=\frac{A}{C},\qquad C_m=A\,r,
@@ -480,3 +480,77 @@ The next release should prioritise data governance and repeatable validation: la
 ```
 
 The active prototype entry point is `app.py`; the repository also contains legacy/evolving modules under `pages/`.
+
+---
+
+# Appendix C: Expanded implementation analysis
+
+## C.1 Current repository map
+
+The repository is organised as a prototype that is gradually moving toward an API-and-worker architecture. The following map records the current division of responsibility.
+
+| Directory or file | Current responsibility | Documentation implication |
+| --- | --- | --- |
+| `main.py` | Delegates to the root application. | Use as the standard Streamlit entry point when the app is launched through `main.py`. |
+| `app.py` | Operational command centre with portfolio, twin, capture, health, telemetry and integration views. | It is the best high-level demonstration of the proposed digital-twin workflow. |
+| `pages/` | Earlier/evolving specialised Streamlit pages: learning, location, inspection, analysis, 3D, IoT, costing, materials, history, reports and settings. | These pages should be described as prototype modules and tested individually before a unified release. |
+| `modules/digital_twin/engine.py` | Deterministic geometry, synthetic telemetry and transparent first-pass screening. | Formulas are useful for education and traceability, but are not design verification. |
+| `platform_core/contracts.py` | Pydantic contracts for assets, captures, telemetry batches and analysis requests. | This is the strongest foundation for future data validation and service integration. |
+| `workers/dispatcher.py` | Detects installed external executables and returns `READY` or `BLOCKED`. | A blocked state protects users from mistaking a missing solver for a completed analysis. |
+| `modules/inspection/`, `modules/cost/`, `modules/history/`, `modules/reports/` | Reusable feature-oriented support modules. | Each module needs unit tests and versioned input/output examples before production use. |
+| `assets/`, `data/`, `database/`, `models/` | Local project assets and reference material. | Treat asset provenance, licences, version and retention as explicit release requirements. |
+
+## C.2 User workflow and decision gates
+
+```text
+Capture evidence -> validate metadata and calibration -> inspect/triage
+       -> relate result to component and spatial context -> review telemetry
+       -> run preliminary screening -> engineer review -> repair/cost/report
+       -> optional solver request -> READY/BLOCKED worker decision -> versioned result
+```
+
+The workflow must stop or be escalated at five decision gates: invalid or incomplete capture metadata; unavailable calibration for a dimensional claim; low-quality telemetry; a screening result requiring review; and an external analysis request whose worker is blocked. These gates are more valuable than a visually convincing dashboard because they preserve accountable engineering decisions.
+
+## C.3 Data model and traceability recommendation
+
+`AssetCreate` establishes an asset name and optional location. `CaptureCreate` connects a capture batch to an asset and requires a storage-style URI, image count and optional calibration record. `TelemetrySample` preserves sensor identifier, measured time, metric, value, unit, quality and extensible metadata. `AnalysisRequest` attaches a requested job type to an asset and a model revision.
+
+For a production release, add immutable identifiers for inspection, component, observation, review and report. Each generated result should carry `source_id`, `created_at_utc`, `software_revision`, `input_hash`, `unit_system`, `quality_state`, `assumptions`, `reviewer` and `approval_state`. The storage object itself should retain a checksum. This makes it possible to answer which input and which method produced a particular recommendation.
+
+## C.4 Verification plan
+
+| Test ID | Test | Acceptance condition | Evidence retained |
+| --- | --- | --- | --- |
+| VT-01 | Contract validation | Invalid image URI, sensor ID, metric and quality values are rejected. | Automated test log and offending-input examples. |
+| VT-02 | Deterministic telemetry | Same seed and hour count produce the same values except for intentionally time-dependent index handling. | Data-frame snapshot and test revision. |
+| VT-03 | Screening arithmetic | Hand calculations match `screening_results` for normal and boundary inputs. | Reviewed calculation sheet. |
+| VT-04 | Worker readiness | Every supported job type returns clear solver name, executable, state and message. | Captured readiness output. |
+| VT-05 | Image triage | A labelled sample set records true/false positives, false negatives and measurement error. | Dataset manifest, annotations and review notes. |
+| VT-06 | End-to-end report | An inspection remains linked from capture through report export. | Versioned report and source manifest. |
+| VT-07 | Usability and safety | Users understand the preliminary-result warning and know when to escalate. | Structured observation and questionnaire results. |
+
+## C.5 Delivery roadmap
+
+**Phase 1 — stabilise the prototype.** Consolidate the active navigation path, correct page references in reports, make dependency requirements reproducible and add tests for contracts and screening calculations.
+
+**Phase 2 — build the evidence layer.** Add persistent asset/component identifiers, object storage, metadata database, audit logs, authenticated access and reviewer workflows. Capture calibration information with every measured image.
+
+**Phase 3 — validate field intelligence.** Collect a consented, labelled and representative inspection dataset. Train a detector or segmentation model with a fixed split, publish error analysis and compare image-derived measurements against reference measurements.
+
+**Phase 4 — connect engineering services.** Integrate approved model inputs, durable queues and versioned COLMAP/OpenSees/OpenFOAM workers. Store only verifiable solver artefacts and retain solver configuration, inputs and logs.
+
+**Phase 5 — pilot responsibly.** Run a limited pilot with qualified engineer review, formal incident/escalation rules, performance monitoring, retention controls and an independent assessment of outputs.
+
+# Appendix D: Updated page-reference register
+
+| Functional area | Actual primary page/file |
+| --- | --- |
+| AI inspection | `pages/5_🔬_AI_Inspection.py` |
+| Damage analysis | `pages/6_📊_Damage_Analysis.py` |
+| 3D building | `pages/7_🏗️_3D_Building.py` |
+| IoT telemetry | `pages/8_📡_IoT.py` |
+| Cost estimation | `pages/9_💰_Cost_Estimation.py` |
+| Materials | `pages/10_🧱_Materials.py` |
+| History | `pages/11_📂_History.py` |
+| Reports | `pages/12_📄_Reports.py` |
+| Settings | `pages/13_⚙️_Settings.py` |
